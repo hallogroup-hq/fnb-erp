@@ -88,6 +88,7 @@ import type {
 } from '../types/erp'
 
 import { ClientTelemetryAgent } from '../lib/telemetry/agent'
+import { useRealtimeSync } from '../lib/realtime/useRealtimeSync'
 
 const TAB_META: Record<ActiveTab, { title: string }> = {
   dashboard: { title: 'Ringkasan Resto' },
@@ -138,6 +139,85 @@ export default function AppRoot() {
   const [isHydrated, setIsHydrated] = useState(false)
   const [isShadowMode, setIsShadowMode] = useState(false)
   const [shadowStaff, setShadowStaff] = useState<string | null>(null)
+
+  // MULTI-DEVICE CLOUD REALTIME SYNC (NEON POSTGRES)
+  const { status: cloudSyncStatus, createOrderCloud, updateOrderCloud } = useRealtimeSync({
+    outletId: activeOutlet.id,
+    onOrderCreated: (newCloudOrder) => {
+      setOrders((prev) => {
+        const exists = prev.some((o) => o.id === newCloudOrder.id || o.orderNumber === newCloudOrder.orderNumber)
+        if (exists) return prev
+        return [
+          {
+            ...newCloudOrder,
+            createdAt: typeof newCloudOrder.createdAt === 'string' ? new Date(newCloudOrder.createdAt).getTime() : (newCloudOrder.createdAt || Date.now()),
+            items: newCloudOrder.items || [],
+            status: newCloudOrder.orderStatus || newCloudOrder.status || 'open',
+          },
+          ...prev,
+        ]
+      })
+      if (newCloudOrder.tableId) {
+        setTables((prev) =>
+          prev.map((t) => (t.id === newCloudOrder.tableId ? { ...t, status: 'occupied', currentOrderId: newCloudOrder.id } : t))
+        )
+      }
+    },
+    onOrderStatusUpdated: ({ orderId, orderStatus, kitchenStatus, barStatus }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: (orderStatus as any) || o.status,
+                items:
+                  orderStatus === 'completed' || orderStatus === 'ready'
+                    ? o.items.map((it) => ({ ...it, isCompletedInKitchen: true }))
+                    : o.items,
+              }
+            : o
+        )
+      )
+    },
+  })
+
+  // CLOUD DATABASE BOOTSTRAP (NEON POSTGRES AS SINGLE SOURCE OF TRUTH)
+  useEffect(() => {
+    async function loadCloudBootstrap() {
+      try {
+        const res = await fetch(`/api/sync/bootstrap?outletId=${encodeURIComponent(activeOutlet.id === 'all' ? 'outlet_tebet' : activeOutlet.id)}`)
+        const json = await res.json()
+        if (json.success && json.data) {
+          if (json.data.products?.length > 0) {
+            setMenuItems(json.data.products.map((p: any) => ({
+              id: p.id,
+              categoryId: p.categoryId,
+              name: p.name,
+              price: p.price,
+              active: p.active,
+              emoji: p.emoji,
+              description: p.description,
+              isKitchenItem: p.isKitchenItem,
+            })))
+          }
+          if (json.data.tables?.length > 0) {
+            setTables(json.data.tables)
+          }
+          if (json.data.orders?.length > 0) {
+            setOrders(json.data.orders.map((o: any) => ({
+              ...o,
+              createdAt: typeof o.createdAt === 'string' ? new Date(o.createdAt).getTime() : (o.createdAt || Date.now()),
+              status: o.orderStatus || o.status || 'open',
+              items: o.items || [],
+            })))
+          }
+        }
+      } catch (err) {
+        console.warn('[CloudBootstrap] Fallback to local store:', err)
+      }
+    }
+    loadCloudBootstrap()
+  }, [activeOutlet.id])
 
   // INITIALIZE CLIENT TELEMETRY AGENT & DETECT SHADOW MODE
   useEffect(() => {
@@ -404,6 +484,35 @@ export default function AppRoot() {
         prev.map((t) => (t.id === newOrder.tableId ? { ...t, status: 'available', currentOrderId: undefined } : t))
       )
     }
+
+    // PUSH ORDER TO NEON POSTGRES CLOUD (SINGLE SOURCE OF TRUTH + MULTI-DEVICE INSTANT PUSH)
+    createOrderCloud({
+      tenantId: org.id || 'tenant_kopi_nusantara',
+      outletId: newOrder.outletId || (activeOutlet.id === 'all' ? 'outlet_tebet' : activeOutlet.id),
+      orderNumber: newOrder.orderNumber,
+      channel: newOrder.channel,
+      tableId: newOrder.tableId,
+      tableName: newOrder.tableName,
+      customerName: newOrder.customerName,
+      notes: newOrder.notes,
+      items: newOrder.items.map((it) => ({
+        productId: it.menuItemId,
+        name: it.name,
+        price: it.price,
+        qty: it.qty,
+        subtotal: it.subtotal,
+        notes: it.notes,
+        isKitchenItem: it.isKitchenItem,
+      })),
+      subtotal: newOrder.subtotal,
+      discountAmount: newOrder.discountAmount,
+      taxAmount: newOrder.taxAmount,
+      serviceChargeAmount: newOrder.serviceChargeAmount,
+      total: newOrder.total,
+      paymentMethod: newOrder.paymentMethod,
+      paymentStatus: 'paid',
+      staffName: currentUser?.name || 'Kasir 01',
+    }).catch((err) => console.error('[Order Cloud Sync Error]:', err))
   }
 
   // 1A. HANDLER: DINE-IN OPEN BILL (KIRIM KE DAPUR)
@@ -418,6 +527,35 @@ export default function AppRoot() {
         )
       )
     }
+
+    // PUSH OPEN DINE-IN BILL TO NEON POSTGRES CLOUD
+    createOrderCloud({
+      tenantId: org.id || 'tenant_kopi_nusantara',
+      outletId: openOrder.outletId || (activeOutlet.id === 'all' ? 'outlet_tebet' : activeOutlet.id),
+      orderNumber: openOrder.orderNumber,
+      channel: openOrder.channel,
+      tableId: openOrder.tableId,
+      tableName: openOrder.tableName,
+      customerName: openOrder.customerName,
+      notes: openOrder.notes,
+      items: openOrder.items.map((it) => ({
+        productId: it.menuItemId,
+        name: it.name,
+        price: it.price,
+        qty: it.qty,
+        subtotal: it.subtotal,
+        notes: it.notes,
+        isKitchenItem: it.isKitchenItem,
+      })),
+      subtotal: openOrder.subtotal,
+      discountAmount: openOrder.discountAmount,
+      taxAmount: openOrder.taxAmount,
+      serviceChargeAmount: openOrder.serviceChargeAmount,
+      total: openOrder.total,
+      paymentMethod: openOrder.paymentMethod || 'cash',
+      paymentStatus: 'unpaid',
+      staffName: currentUser?.name || 'Kasir 01',
+    }).catch((err) => console.error('[Hold Order Cloud Sync Error]:', err))
   }
 
   // 1B. HANDLER: UPDATE EXISTING TABLE ORDER (TAMBAH MENU KE MEJA)
@@ -444,6 +582,9 @@ export default function AppRoot() {
           : o
       )
     )
+
+    // PUSH STATUS UPDATE TO NEON POSTGRES CLOUD
+    updateOrderCloud(orderId, { orderStatus: newStatus })
   }
 
   // 1C. HANDLER: UPDATE TABLE STATUS
@@ -1308,6 +1449,41 @@ export default function AppRoot() {
 
             {/* RIGHT: QUICK ACCESS SHORTCUTS & CLOCK */}
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* CLOUD REALTIME SYNC STATUS PILL */}
+              <div
+                title={
+                  cloudSyncStatus === 'connected'
+                    ? 'Terkoneksi ke Neon Postgres: Sinkronisasi 3 device real-time aktif (<50ms)'
+                    : cloudSyncStatus === 'connecting'
+                    ? 'Sedang menghubungkan ke Cloud...'
+                    : 'Terputus dari Cloud. Mencoba rekoneksi otomatis...'
+                }
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all ${
+                  cloudSyncStatus === 'connected'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : cloudSyncStatus === 'connecting'
+                    ? 'bg-amber-50 text-amber-700 border-amber-200 animate-pulse'
+                    : 'bg-rose-50 text-rose-700 border-rose-200'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    cloudSyncStatus === 'connected'
+                      ? 'bg-emerald-500 animate-pulse'
+                      : cloudSyncStatus === 'connecting'
+                      ? 'bg-amber-500 animate-ping'
+                      : 'bg-rose-500'
+                  }`}
+                />
+                <span className="hidden sm:inline">
+                  {cloudSyncStatus === 'connected'
+                    ? 'Cloud Sync'
+                    : cloudSyncStatus === 'connecting'
+                    ? 'Menghubungkan...'
+                    : 'Offline'}
+                </span>
+              </div>
+
               {/* CURRENT DATE CHIP */}
               <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F8F7F4] border border-[#E7E5E4] text-[11px] text-neutral-600 font-medium">
                 <Calendar size={12} className="text-neutral-400" />
