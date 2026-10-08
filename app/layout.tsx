@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nusantara Enterprise ERP · SAK EMKM Standard & Cafe Resto Suite",
-  description: "Commercial B2B ERP for Cafe & Resto, Kitchen BOM Recipes, and Accurate-Grade Double-Entry Accounting",
+  title: "Nusantara F&B OS · Sistem Operasi Kasir, Dapur & Keuangan Resto Modern",
+  description: "Platform all-in-one POS offline-first, Kitchen Display System (KDS), HPP resep otomatis, dan akuntansi SAK EMKM siap bank untuk cafe & resto.",
 };
 
 export default function RootLayout({
