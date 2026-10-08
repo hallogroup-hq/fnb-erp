@@ -87,6 +87,8 @@ import type {
   ModifierGroup,
 } from '../types/erp'
 
+import { ClientTelemetryAgent } from '../lib/telemetry/agent'
+
 const TAB_META: Record<ActiveTab, { title: string }> = {
   dashboard: { title: 'Ringkasan Resto' },
   pos: { title: 'Kasir POS' },
@@ -134,6 +136,30 @@ export default function AppRoot() {
   const [journals, setJournals] = useState<JournalEntry[]>(() => seedInitialJournals())
 
   const [isHydrated, setIsHydrated] = useState(false)
+  const [isShadowMode, setIsShadowMode] = useState(false)
+  const [shadowStaff, setShadowStaff] = useState<string | null>(null)
+
+  // INITIALIZE CLIENT TELEMETRY AGENT & DETECT SHADOW MODE
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('shadow_mode') === 'true') {
+        setIsShadowMode(true)
+        setShadowStaff(params.get('staff') || 'Staf Hallo Ops')
+      }
+    }
+
+    const agent = new ClientTelemetryAgent({
+      tenantId: org.id || 'org-resto',
+      outletId: activeOutlet.id,
+      outletName: activeOutlet.name,
+    })
+    agent.init()
+
+    return () => {
+      agent.destroy()
+    }
+  }, [org.id, activeOutlet.id, activeOutlet.name])
 
   // HYDRATE FROM LOCALSTORAGE ON FIRST MOUNT
   useEffect(() => {
@@ -1169,6 +1195,31 @@ export default function AppRoot() {
 
       {/* 2. MAIN WORKSPACE CONTAINER */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* SHADOW SUPPORT INSPECTOR BANNER */}
+        {isShadowMode && (
+          <div className="bg-[#0F172A] text-white px-4 py-2 text-xs flex items-center justify-between z-30 border-b border-slate-700 no-print">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-extrabold tracking-tight">MODE INSPEKSI SHADOW HALLO OPS</span>
+              <span className="text-slate-400">· Staf: {shadowStaff}</span>
+              <span className="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono">
+                Toko: {org.name} ({activeOutlet.name})
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                const url = new URL(window.location.href)
+                url.searchParams.delete('shadow_mode')
+                url.searchParams.delete('staff')
+                window.location.href = url.toString()
+              }}
+              className="text-slate-300 hover:text-white font-bold underline cursor-pointer text-[11px]"
+            >
+              Keluar Sesi Shadow
+            </button>
+          </div>
+        )}
+
         {/* TOP UTILITY HEADER */}
         <header className="sticky top-0 z-20 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-md px-4 sm:px-6 py-3 select-none no-print">
           <div className="flex items-center justify-between gap-4">
