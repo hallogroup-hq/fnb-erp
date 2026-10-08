@@ -2,28 +2,10 @@
 
 import React, { useState, useMemo } from 'react'
 import {
-  Store,
-  Tablet,
-  UtensilsCrossed,
   ArrowRight,
-  CheckCircle2,
-  WifiOff,
-  Receipt,
-  BarChart3,
-  Flame,
-  Check,
-  Coffee,
   ExternalLink,
   ChevronDown,
-  Printer,
-  ShieldCheck,
-  Building2,
-  Package,
-  Layers,
-  FileSpreadsheet,
-  MapPin,
-  Clock,
-  Sparkles,
+  Check,
 } from 'lucide-react'
 
 // Live Demo Store Link
@@ -33,7 +15,7 @@ const OPS_CONSOLE_URL = 'https://fnb-ops-delta.vercel.app'
 export default function SaaSLandingPage() {
   // Interactive Product Showcase State
   const [activeTab, setActiveTab] = useState<'pos' | 'kds' | 'bom' | 'finance'>('pos')
-  
+
   // POS Simulator State
   const [selectedTable, setSelectedTable] = useState('Meja 04')
   const [posCart, setPosCart] = useState<Array<{ name: string; price: number; qty: number; note: string }>>([
@@ -46,7 +28,7 @@ export default function SaaSLandingPage() {
   const [kdsOrders, setKdsOrders] = useState([
     { id: '1041', table: 'Meja 02', station: 'Bar', items: ['2x Espresso Double', '1x Butter Croissant'], status: 'ready', time: '2 mnt lalu' },
     { id: '1042', table: 'Meja 04', station: 'Dapur & Bar', items: ['2x Iced Palm Sugar Latte', '1x Truffle Fries'], status: 'cooking', time: '4 mnt lalu' },
-    { id: '1043', table: 'Takeaway #12', station: 'Dapur', items: ['1x Wagyu Donburi (Pedas)'], status: 'new', time: '1 mnt lalu' },
+    { id: '1043', table: 'Takeaway #12', station: 'Dapur', items: ['1x Wagyu Donburi'], status: 'new', time: '1 mnt lalu' },
   ])
 
   // Pricing State
@@ -122,9 +104,6 @@ export default function SaaSLandingPage() {
           </div>
 
           <nav className="hidden md:flex items-center gap-7 text-xs font-medium text-stone-600">
-            <a href="#ekosistem" className="hover:text-stone-950 transition-colors">
-              Peta Ekosistem
-            </a>
             <a href="#showcase" className="hover:text-stone-950 transition-colors">
               Aplikasi Kasir
             </a>
@@ -189,7 +168,6 @@ export default function SaaSLandingPage() {
                 rel="noreferrer"
                 className="w-full sm:w-auto px-6 py-3.5 rounded-lg bg-stone-950 hover:bg-stone-800 text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98]"
               >
-                <Store size={16} />
                 <span>Buka Demo Toko Langsung</span>
                 <ExternalLink size={13} className="text-stone-400" />
               </a>
@@ -220,58 +198,22 @@ export default function SaaSLandingPage() {
           </div>
 
           {/* ----------------------------------------------------------- */}
-          {/* VISUAL CENTERPIECE: ARCHITECTURAL RESTO COUNTER & HOTSPOTS  */}
+          {/* VISUAL CENTERPIECE: CLEAN ARCHITECTURAL IMAGE (NO BADGES)   */}
           {/* ----------------------------------------------------------- */}
-          <div id="ekosistem" className="pt-6">
-            <div className="relative rounded-2xl overflow-hidden border border-stone-300/80 shadow-xl bg-stone-100 group">
+          <div className="pt-6">
+            <div className="rounded-2xl overflow-hidden border border-stone-200/90 shadow-lg bg-stone-100">
               <img
                 src="/images/hero-resto-counter.jpg"
-                alt="Visual interior bar kopi dan kasir resto modern"
-                className="w-full h-auto object-cover max-h-[520px] filter brightness-[0.98]"
+                alt="Interior meja kasir dan stasiun kopi modern"
+                className="w-full h-auto object-cover max-h-[520px]"
               />
-
-              {/* OVERLAY ANNOTATION CARDS (GROUNDED VISUAL CALLOUTS) */}
-              <div className="absolute inset-0 pointer-events-none p-4 sm:p-6 flex flex-col justify-between">
-                <div className="flex items-center justify-between">
-                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-lg border border-stone-200/90 shadow-md text-xs space-y-0.5">
-                    <span className="font-bold text-stone-950 block font-display">
-                      Stasiun Kasir & Barista
-                    </span>
-                    <span className="text-[11px] text-stone-600 block">
-                      Tablet POS & Printer Thermal 58/80mm
-                    </span>
-                  </div>
-
-                  <div className="pointer-events-auto hidden sm:flex items-center gap-1.5 bg-stone-950/90 text-white px-3 py-1.5 rounded-lg text-xs font-mono backdrop-blur-md shadow-md">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span>Sinkronisasi Otomatis Dapur & Bar</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-                  <div className="pointer-events-auto bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-lg border border-stone-200/90 shadow-md text-xs max-w-sm space-y-1">
-                    <div className="font-semibold text-stone-950 flex items-center gap-1.5">
-                      <Coffee size={14} className="text-amber-700" />
-                      <span>Resep Master Terintegrasi</span>
-                    </div>
-                    <p className="text-[11px] text-stone-600 leading-snug">
-                      Setiap cup kopi memotong stok biji kopi (18g) dan susu (160ml) secara otomatis di gudang saat nota tercetak.
-                    </p>
-                  </div>
-
-                  <div className="pointer-events-auto bg-stone-900/95 text-stone-200 backdrop-blur-md px-3.5 py-2 rounded-lg border border-stone-800 shadow-md text-xs flex items-center gap-2 font-mono">
-                    <Flame size={14} className="text-amber-400" />
-                    <span>Layar KDS Dapur: Tiket 0-Lag</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. REAL APPLICATION SHOWCASE (TABBED WORKBENCH)               */}
+      {/* 2. REAL APPLICATION SHOWCASE (COHESIVE, MONOCHROME PALETTE)   */}
       {/* ------------------------------------------------------------- */}
       <section id="showcase" className="py-16 px-4 sm:px-8 border-b border-stone-200/80 bg-[#faf8f5]">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -347,7 +289,7 @@ export default function SaaSLandingPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="w-2 h-2 rounded-full bg-stone-900" />
                 <span className="text-stone-600">Online & Siap Cetak</span>
               </div>
             </div>
@@ -396,7 +338,7 @@ export default function SaaSLandingPage() {
 
                   <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
                     <span>Shortcut: Split Bill, Gabung Meja, Pindah Meja</span>
-                    <span className="text-emerald-700 font-medium font-mono">Auto-Sync IndexedDB</span>
+                    <span className="text-stone-700 font-medium font-mono">Auto-Sync IndexedDB</span>
                   </div>
                 </div>
 
@@ -404,9 +346,8 @@ export default function SaaSLandingPage() {
                 <div className="lg:col-span-4 p-5 bg-stone-50/60 flex flex-col justify-between space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between border-b border-stone-200 pb-2">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-stone-900">
-                        <Receipt size={14} className="text-stone-500" />
-                        <span>Pesanan: {selectedTable}</span>
+                      <div className="text-xs font-bold text-stone-900">
+                        Pesanan: {selectedTable}
                       </div>
                       <div className="flex items-center gap-1 font-mono">
                         {['Meja 02', 'Meja 04', 'Takeaway'].map((t) => (
@@ -463,23 +404,19 @@ export default function SaaSLandingPage() {
                     </div>
 
                     {paymentDone ? (
-                      <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                        <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                        <div>
-                          <span className="font-bold block">Pembayaran Berhasil!</span>
-                          <span className="text-[11px] text-emerald-700">
-                            Struk tercetak ke printer thermal & tiket diteruskan ke KDS dapur.
-                          </span>
-                        </div>
+                      <div className="p-3 rounded-lg bg-stone-100 border border-stone-200 text-stone-900 text-xs">
+                        <span className="font-bold block">Pembayaran Berhasil</span>
+                        <span className="text-[11px] text-stone-600 block mt-0.5">
+                          Struk tercetak ke printer thermal dan tiket diteruskan ke layar dapur.
+                        </span>
                       </div>
                     ) : (
                       <button
                         type="button"
                         onClick={() => setPaymentDone(true)}
-                        className="w-full py-2.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        className="w-full py-2.5 rounded-lg bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs transition-colors cursor-pointer"
                       >
-                        <Printer size={13} />
-                        <span>Selesaikan Transaksi & Cetak Struk</span>
+                        Selesaikan Transaksi & Cetak Struk
                       </button>
                     )}
                   </div>
@@ -487,18 +424,20 @@ export default function SaaSLandingPage() {
               </div>
             )}
 
-            {/* TAB 2: KDS VIEW */}
+            {/* TAB 2: KDS VIEW (MATCHING UNIFIED MONOCHROME STYLE) */}
             {activeTab === 'kds' && (
-              <div className="p-5 bg-stone-900 text-stone-100 min-h-[460px] space-y-4">
-                <div className="flex items-center justify-between border-b border-stone-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Flame size={16} className="text-amber-400" />
-                    <span className="font-bold text-xs sm:text-sm text-white font-display">
+              <div className="p-5 bg-white text-stone-900 min-h-[460px] space-y-4">
+                <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+                  <div>
+                    <span className="font-bold text-xs sm:text-sm text-stone-900 block font-display">
                       Layar Display Dapur & Bar (KDS)
                     </span>
+                    <span className="text-xs text-stone-500">
+                      Pesanan diteruskan ke stasiun koki dan barista secara otomatis.
+                    </span>
                   </div>
-                  <span className="text-[11px] font-mono text-stone-400">
-                    Pembaruan Real-Time 0-Detik
+                  <span className="text-xs font-mono text-stone-500">
+                    Pembaruan Real-Time
                   </span>
                 </div>
 
@@ -506,39 +445,29 @@ export default function SaaSLandingPage() {
                   {kdsOrders.map((order) => (
                     <div
                       key={order.id}
-                      className={`p-3.5 rounded-lg border flex flex-col justify-between space-y-3 ${
-                        order.status === 'ready'
-                          ? 'bg-stone-800/60 border-stone-700'
-                          : 'bg-stone-800 border-stone-600'
-                      }`}
+                      className="p-3.5 rounded-lg border border-stone-200 bg-stone-50 flex flex-col justify-between space-y-3"
                     >
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs border-b border-stone-700 pb-1.5 font-mono">
-                          <span className="font-bold text-white">
+                        <div className="flex items-center justify-between text-xs border-b border-stone-200 pb-1.5 font-mono">
+                          <span className="font-bold text-stone-950">
                             #{order.id} · {order.table}
                           </span>
-                          <span className="text-[10px] text-stone-400">
+                          <span className="text-[10px] text-stone-500">
                             {order.time}
                           </span>
                         </div>
 
                         <div className="space-y-1 text-xs">
                           {order.items.map((item, idx) => (
-                            <div key={idx} className="text-stone-200">
+                            <div key={idx} className="text-stone-700">
                               • {item}
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-stone-700 flex items-center justify-between">
-                        <span
-                          className={`text-[10px] font-mono px-2 py-0.5 rounded ${
-                            order.status === 'ready'
-                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                              : 'bg-amber-950 text-amber-400 border border-amber-800'
-                          }`}
-                        >
+                      <div className="pt-2 border-t border-stone-200 flex items-center justify-between">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-stone-200 text-stone-800">
                           {order.status === 'ready' ? 'Siap Antar' : 'Sedang Dimasak'}
                         </span>
 
@@ -546,7 +475,7 @@ export default function SaaSLandingPage() {
                           <button
                             type="button"
                             onClick={() => handleMarkKdsDone(order.id)}
-                            className="px-2.5 py-1 rounded bg-white text-stone-900 font-semibold text-[11px] hover:bg-stone-200 transition-colors cursor-pointer"
+                            className="px-2.5 py-1 rounded bg-stone-900 text-white font-semibold text-[11px] hover:bg-stone-800 transition-colors cursor-pointer"
                           >
                             Tandai Siap
                           </button>
@@ -570,7 +499,7 @@ export default function SaaSLandingPage() {
                       Stok gudang terpotong per gram saat nota kasir tercetak.
                     </span>
                   </div>
-                  <span className="text-xs font-mono font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded">
+                  <span className="text-xs font-mono font-semibold text-stone-800 bg-stone-100 border border-stone-200 px-2.5 py-1 rounded">
                     Margin Kotor: 67.0%
                   </span>
                 </div>
@@ -614,7 +543,7 @@ export default function SaaSLandingPage() {
                         <td colSpan={2} className="py-2.5 px-3 font-sans text-right">
                           Total HPP Bahan per Cup:
                         </td>
-                        <td className="py-2.5 px-3 text-right text-emerald-800">Rp 9.230</td>
+                        <td className="py-2.5 px-3 text-right text-stone-950">Rp 9.230</td>
                         <td className="py-2.5 px-3 text-right text-[11px] font-sans font-normal text-stone-500">
                           Harga Jual: Rp 28.000
                         </td>
@@ -665,12 +594,12 @@ export default function SaaSLandingPage() {
                     <span className="text-[10px] text-stone-500 font-sans">Gaji, sewa & listrik</span>
                   </div>
 
-                  <div className="p-3 rounded-lg border border-emerald-200 bg-emerald-50/60">
-                    <span className="text-[10px] text-emerald-800 font-semibold block">LABA BERSIH BERJALAN</span>
-                    <span className="text-base font-bold text-emerald-800 mt-1 block">
+                  <div className="p-3 rounded-lg border border-stone-200 bg-stone-50">
+                    <span className="text-[10px] text-stone-400 block">LABA BERSIH BERJALAN</span>
+                    <span className="text-base font-bold text-stone-950 mt-1 block">
                       Rp 61.295.000
                     </span>
-                    <span className="text-[10px] text-emerald-700 font-sans">Margin: 41.2%</span>
+                    <span className="text-[10px] text-stone-500 font-sans">Margin: 41.2%</span>
                   </div>
                 </div>
               </div>
@@ -698,9 +627,9 @@ export default function SaaSLandingPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* LEFT: 3 GROUNDED OPERATIONAL PILLARS */}
-            <div className="lg:col-span-6 space-y-6">
-              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2.5">
-                <span className="text-xs font-mono font-bold text-stone-500 block">
+            <div className="lg:col-span-6 space-y-5">
+              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2">
+                <span className="text-xs font-mono font-bold text-stone-400 block">
                   01 / MESIN KASIR OFFLINE-FIRST
                 </span>
                 <h3 className="font-display font-bold text-lg text-stone-950">
@@ -711,8 +640,8 @@ export default function SaaSLandingPage() {
                 </p>
               </div>
 
-              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2.5">
-                <span className="text-xs font-mono font-bold text-stone-500 block">
+              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2">
+                <span className="text-xs font-mono font-bold text-stone-400 block">
                   02 / PEMOTONGAN GRAMATUR RESEP
                 </span>
                 <h3 className="font-display font-bold text-lg text-stone-950">
@@ -723,8 +652,8 @@ export default function SaaSLandingPage() {
                 </p>
               </div>
 
-              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2.5">
-                <span className="text-xs font-mono font-bold text-stone-500 block">
+              <div className="p-6 rounded-xl border border-stone-200 bg-[#faf8f5] space-y-2">
+                <span className="text-xs font-mono font-bold text-stone-400 block">
                   03 / PEMBUKUAN STANDAR RESMI
                 </span>
                 <h3 className="font-display font-bold text-lg text-stone-950">
@@ -736,22 +665,14 @@ export default function SaaSLandingPage() {
               </div>
             </div>
 
-            {/* RIGHT: KITCHEN PASS VISUAL ILLUSTRATION */}
+            {/* RIGHT: KITCHEN PASS VISUAL ILLUSTRATION (CLEAN, NO OVERLAYS) */}
             <div className="lg:col-span-6">
-              <div className="rounded-2xl overflow-hidden border border-stone-300/80 shadow-lg relative bg-stone-100">
+              <div className="rounded-2xl overflow-hidden border border-stone-200/90 shadow-md bg-stone-100">
                 <img
                   src="/images/resto-kitchen-pass.jpg"
                   alt="Dapur restoran dan pantry bahan baku segar"
                   className="w-full h-auto object-cover max-h-[500px]"
                 />
-                <div className="absolute bottom-0 inset-x-0 p-5 bg-gradient-to-t from-stone-950/90 via-stone-950/40 to-transparent text-white space-y-1">
-                  <span className="font-display font-bold text-sm block">
-                    KDS Dapur & Kontrol Bahan Baku
-                  </span>
-                  <span className="text-[11px] text-stone-300 block font-sans">
-                    Tiket pesanan diteruskan ke koki secara digital tanpa kertas bon basah atau terselip.
-                  </span>
-                </div>
               </div>
             </div>
           </div>
@@ -759,7 +680,7 @@ export default function SaaSLandingPage() {
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 4. TRANSPARENT PRICING PLANS                                  */}
+      {/* 4. TRANSPARENT PRICING PLANS (UNIFIED MONOCHROME)             */}
       {/* ------------------------------------------------------------- */}
       <section id="harga" className="py-20 px-4 sm:px-8 border-b border-stone-200/80 bg-[#faf8f5]">
         <div className="max-w-5xl mx-auto space-y-10">
@@ -1026,7 +947,7 @@ export default function SaaSLandingPage() {
           <div className="p-6 sm:p-8 rounded-2xl border border-stone-200 bg-white shadow-xs">
             {submitted ? (
               <div className="py-8 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-full bg-stone-100 text-stone-900 flex items-center justify-center mx-auto">
                   <Check size={22} />
                 </div>
                 <h3 className="font-display text-lg font-bold text-stone-950">
