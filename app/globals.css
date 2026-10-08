@@ -93,3 +93,61 @@ button, input, select, textarea {
     color: #000000 !important;
   }
 }
+
+/* ------------------------------------------------------------- */
+/* Tactile F&B Elements: Thermal Paper & Hardware Mockups        */
+/* ------------------------------------------------------------- */
+.receipt-paper {
+  background-color: #faf8f5;
+  color: #1c1917;
+  font-family: 'Courier New', Courier, Menlo, Consolas, monospace;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+}
+
+.receipt-tear-bottom {
+  position: relative;
+}
+.receipt-tear-bottom::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 6px;
+  background: linear-gradient(135deg, #faf8f5 3px, transparent 0),
+              linear-gradient(-135deg, #faf8f5 3px, transparent 0);
+  background-size: 8px 6px;
+  background-repeat: repeat-x;
+}
+
+.receipt-tear-top {
+  position: relative;
+}
+.receipt-tear-top::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -6px;
+  height: 6px;
+  background: linear-gradient(45deg, #faf8f5 3px, transparent 0),
+              linear-gradient(-45deg, #faf8f5 3px, transparent 0);
+  background-size: 8px 6px;
+  background-repeat: repeat-x;
+}
+
+/* Subtle thermal printer feed animation */
+@keyframes feedReceipt {
+  0% {
+    transform: translateY(-16px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-receipt-feed {
+  animation: feedReceipt 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

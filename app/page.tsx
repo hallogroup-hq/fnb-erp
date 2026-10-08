@@ -7,83 +7,183 @@ import {
   UtensilsCrossed,
   ArrowRight,
   CheckCircle2,
-  Zap,
-  ShieldCheck,
   WifiOff,
   Receipt,
   TrendingUp,
   BarChart3,
-  Layers,
   Clock,
-  Sliders,
   HelpCircle,
   CreditCard,
-  ChevronRight,
   ChevronDown,
   ExternalLink,
   Flame,
   FileSpreadsheet,
-  FileText,
   Printer,
-  Sparkles,
-  Users,
-  Building2,
   Check,
-  Star,
-  RefreshCw,
-  Phone,
-  Mail,
-  User,
   Coffee,
+  AlertCircle,
+  Package,
+  RefreshCw,
+  Smartphone,
+  Laptop,
+  Building2,
+  Server,
   DollarSign,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 
 // Live Demo Store Link
 const LIVE_DEMO_URL = 'https://fnb-erp.vercel.app'
 const OPS_CONSOLE_URL = 'https://fnb-ops-delta.vercel.app'
 
+interface MenuItem {
+  id: string
+  name: string
+  category: 'Coffee' | 'Food' | 'Bakery'
+  price: number
+  prepTime: string
+  bom: {
+    beansGrams?: number
+    milkMl?: number
+    syrupMl?: number
+    meatGrams?: number
+    cogs: number
+  }
+}
+
+const DEMO_MENU: MenuItem[] = [
+  {
+    id: 'm1',
+    name: 'Iced Palm Sugar Latte',
+    category: 'Coffee',
+    price: 28000,
+    prepTime: '2 min',
+    bom: { beansGrams: 18, milkMl: 160, syrupMl: 25, cogs: 9230 },
+  },
+  {
+    id: 'm2',
+    name: 'Espresso Double Shot',
+    category: 'Coffee',
+    price: 22000,
+    prepTime: '1 min',
+    bom: { beansGrams: 20, cogs: 4400 },
+  },
+  {
+    id: 'm3',
+    name: 'Truffle Parmesan Fries',
+    category: 'Food',
+    price: 38000,
+    prepTime: '8 min',
+    bom: { cogs: 13500 },
+  },
+  {
+    id: 'm4',
+    name: 'Wagyu Beef Donburi',
+    category: 'Food',
+    price: 65000,
+    prepTime: '10 min',
+    bom: { meatGrams: 120, cogs: 26000 },
+  },
+  {
+    id: 'm5',
+    name: 'Butter Croissant Almond',
+    category: 'Bakery',
+    price: 32000,
+    prepTime: '3 min',
+    bom: { cogs: 11200 },
+  },
+]
+
 export default function SaaSLandingPage() {
-  // Navigation & Interactive states
-  const [activeDemoTab, setActiveDemoTab] = useState<'pos' | 'kds' | 'inventory' | 'finance'>('pos')
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
-  
-  // Interactive ROI Calculator State
+  // -----------------------------------------------------------------
+  // 1. HERO INTERACTIVE COUNTER TERMINAL STATE
+  // -----------------------------------------------------------------
+  const [selectedTable, setSelectedTable] = useState<string>('Meja 04')
+  const [cart, setCart] = useState<Array<{ item: MenuItem; qty: number; note: string }>>([
+    { item: DEMO_MENU[0], qty: 2, note: 'Less Ice, Oat Milk' },
+    { item: DEMO_MENU[2], qty: 1, note: 'Extra Truffle Sauce' },
+  ])
+  const [isReceiptPrinting, setIsReceiptPrinting] = useState<boolean>(true)
+  const [lastPrintedAt, setLastPrintedAt] = useState<string>('12:42:18 WIB')
+  const [orderNumber, setOrderNumber] = useState<number>(1042)
+  const [kdsOrders, setKdsOrders] = useState<Array<{ id: number; table: string; items: string[]; status: 'cooking' | 'ready'; elapsed: string }>>([
+    { id: 1041, table: 'Meja 02', items: ['2x Espresso Double', '1x Butter Croissant'], status: 'ready', elapsed: '01:40' },
+    { id: 1042, table: 'Meja 04', items: ['2x Iced Palm Sugar Latte', '1x Truffle Parmesan Fries'], status: 'cooking', elapsed: '00:15' },
+  ])
+
+  // Inventory deductions tracker
+  const inventoryDeductions = useMemo(() => {
+    let beans = 0
+    let milk = 0
+    let syrup = 0
+    let cogs = 0
+
+    cart.forEach((c) => {
+      if (c.item.bom.beansGrams) beans += c.item.bom.beansGrams * c.qty
+      if (c.item.bom.milkMl) milk += c.item.bom.milkMl * c.qty
+      if (c.item.bom.syrupMl) syrup += c.item.bom.syrupMl * c.qty
+      cogs += c.item.bom.cogs * c.qty
+    })
+
+    return { beans, milk, syrup, cogs }
+  }, [cart])
+
+  const subtotal = useMemo(() => {
+    return cart.reduce((sum, c) => sum + c.item.price * c.qty, 0)
+  }, [cart])
+
+  const taxPb1 = useMemo(() => Math.round(subtotal * 0.1), [subtotal])
+  const grandTotal = useMemo(() => subtotal + taxPb1, [subtotal, taxPb1])
+
+  function handleAddToCart(item: MenuItem) {
+    setCart((prev) => {
+      const existing = prev.find((c) => c.item.id === item.id)
+      if (existing) {
+        return prev.map((c) => (c.item.id === item.id ? { ...c, qty: c.qty + 1 } : c))
+      }
+      return [...prev, { item, qty: 1, note: 'SOP Normal' }]
+    })
+  }
+
+  function handleRemoveItem(itemId: string) {
+    setCart((prev) => prev.filter((c) => c.item.id !== itemId))
+  }
+
+  function handleSimulatePrintReceipt() {
+    setIsReceiptPrinting(false)
+    const now = new Date()
+    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')} WIB`
+    setLastPrintedAt(timeStr)
+    const nextOrderNum = orderNumber + 1
+    setOrderNumber(nextOrderNum)
+
+    // Add to KDS
+    const itemNames = cart.map((c) => `${c.qty}x ${c.item.name}`)
+    setKdsOrders((prev) => [
+      { id: nextOrderNum, table: selectedTable, items: itemNames, status: 'cooking', elapsed: '00:01' },
+      ...prev.slice(0, 2),
+    ])
+
+    setTimeout(() => {
+      setIsReceiptPrinting(true)
+    }, 50)
+  }
+
+  // -----------------------------------------------------------------
+  // 2. INTERACTIVE ROI & FOOD COST CALCULATOR STATE
+  // -----------------------------------------------------------------
   const [outletsCount, setOutletsCount] = useState<number>(2)
   const [dailyOrdersPerOutlet, setDailyOrdersPerOutlet] = useState<number>(180)
   const [avgTicketPrice, setAvgTicketPrice] = useState<number>(45000)
 
-  // Registration Form State
-  const [regForm, setRegForm] = useState({
-    businessName: '',
-    ownerName: '',
-    phone: '',
-    email: '',
-    tier: 'pro',
-    city: '',
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submittedSuccess, setSubmittedSuccess] = useState(false)
-
-  // FAQ Accordion State
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
-
-  // Interactive Live POS Simulator State (inside Tab 1)
-  const [demoCart, setDemoCart] = useState<Array<{ name: string; price: number; qty: number }>>([
-    { name: 'Kopi Susu Gula Aren 250ml', price: 24000, qty: 2 },
-    { name: 'Croissant Butter Almond', price: 32000, qty: 1 },
-  ])
-  const [demoPaymentDone, setDemoPaymentDone] = useState(false)
-
-  // ROI Calculations
   const roiCalculations = useMemo(() => {
     const monthlyGrossRevenue = outletsCount * dailyOrdersPerOutlet * avgTicketPrice * 30
-    // Food cost baseline ~38%
     const monthlyFoodCost = monthlyGrossRevenue * 0.38
-    // Savings from strict gramatur recipe tracking & waste prevention ~4.5%
-    const monthlyFoodCostSavings = monthlyFoodCost * 0.045
-    // Labor & bookkeeping hours saved ~18 hours per branch x Rp 50.000/hr
-    const monthlyAdminTimeSaved = outletsCount * 18 * 50000
-    // Total monthly financial upside
+    // Average 4.8% savings from precision recipe gramatur tracking and anti-shrinkage
+    const monthlyFoodCostSavings = monthlyFoodCost * 0.048
+    // 20 hours staff reconciliation saved per branch per month x Rp 45.000/hr
+    const monthlyAdminTimeSaved = outletsCount * 20 * 45000
     const totalMonthlyValue = monthlyFoodCostSavings + monthlyAdminTimeSaved
 
     return {
@@ -95,31 +195,47 @@ export default function SaaSLandingPage() {
     }
   }, [outletsCount, dailyOrdersPerOutlet, avgTicketPrice])
 
-  function handleDemoAddToCart(item: { name: string; price: number }) {
-    setDemoPaymentDone(false)
-    setDemoCart((prev) => {
-      const existing = prev.find((i) => i.name === item.name)
-      if (existing) {
-        return prev.map((i) =>
-          i.name === item.name ? { ...i, qty: i.qty + 1 } : i
-        )
-      }
-      return [...prev, { ...item, qty: 1 }]
-    })
-  }
+  // -----------------------------------------------------------------
+  // 3. PRICING & REGISTRATION FORM STATE
+  // -----------------------------------------------------------------
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
+  const [regForm, setRegForm] = useState({
+    businessName: '',
+    ownerName: '',
+    phone: '',
+    city: '',
+    tier: 'pro',
+  })
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submittedSuccess, setSubmittedSuccess] = useState(false)
 
-  function handleDemoClearCart() {
-    setDemoCart([])
-    setDemoPaymentDone(false)
-  }
+  // -----------------------------------------------------------------
+  // 4. FAQ STATE
+  // -----------------------------------------------------------------
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0)
 
-  function handleDemoPay() {
-    setDemoPaymentDone(true)
-  }
-
-  const demoCartTotal = useMemo(() => {
-    return demoCart.reduce((sum, i) => sum + i.price * i.qty, 0)
-  }, [demoCart])
+  const faqItems = [
+    {
+      q: 'Bagaimana jika koneksi internet ruko mendadak mati di jam sibuk?',
+      a: 'Nusantara F&B OS dibangun dengan arsitektur Offline-First (IndexedDB lokal di browser). Transaksi kasir tetap berjalan lancar, printer thermal tetap mencetak struk dalam 0.2 detik, dan semua data otomatis tersinkronisasi ke server pusat saat koneksi internet kembali menyala. Tidak ada transaksi yang tertunda atau hilang.',
+    },
+    {
+      q: 'Apakah saya wajib membeli mesin kasir atau hardware khusus dari Hallo Group?',
+      a: 'Sama sekali tidak. Anda bebas menggunakan perangkat yang sudah Anda miliki: tablet Android, iPad, laptop Windows, atau smartphone. Sistem kami juga kompatibel langsung dengan hampir semua printer thermal 58mm dan 80mm di pasaran (USB, Bluetooth, atau LAN ethernet) serta laci uang standar RJ11.',
+    },
+    {
+      q: 'Bagaimana sistem mencegah kecurangan kasir seperti void atau pembatalan transaksi?',
+      a: 'Setiap aksi pembatalan nota, diskon manual, atau void transaksi memerlukan otorisasi PIN manajer atau supervisor. Seluruh riwayat perubahan tercatat ke dalam Audit Trail log dengan stempel waktu detik yang tidak dapat diubah atau dihapus oleh kasir.',
+    },
+    {
+      q: 'Bisakah resep menu disesuaikan dengan opsi tambahan seperti ganti susu oat?',
+      a: 'Bisa. Sistem mendukung Master Bill of Materials (BOM) bertingkat dengan varian ad-hoc. Ketika barista memilih opsi Oat Milk, sistem secara otomatis mengurangi stok susu oat di gudang dan menyesuaikan HPP serta harga jual seketika tanpa merusak takaran resep dasar.',
+    },
+    {
+      q: 'Apakah laporan keuangannya sudah sesuai standar akuntansi untuk pengajuan pinjaman bank?',
+      a: 'Ya. Laporan Laba Rugi dan Neraca kami mengikuti standar SAK EMKM resmi yang diakui perbankan dan kantor pajak di Indonesia. Anda dapat mengunduh laporan bulanan dalam format Excel rapi atau PDF siap cetak dalam satu klik.',
+    },
+  ]
 
   function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -129,96 +245,114 @@ export default function SaaSLandingPage() {
     setTimeout(() => {
       setIsSubmitting(false)
       setSubmittedSuccess(true)
-    }, 900)
+    }, 700)
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-zinc-900 selection:bg-zinc-900 selection:text-white font-sans antialiased">
+    <div className="min-h-screen bg-[#0e0d0c] text-stone-100 selection:bg-amber-500 selection:text-stone-950 font-sans antialiased">
       {/* ------------------------------------------------------------- */}
-      {/* 1. TOP ANNOUNCEMENT BAR                                       */}
+      {/* 1. TOP SYSTEM TELEMETRY TICKER (AUTHENTIC F&B OPS BAR)        */}
       {/* ------------------------------------------------------------- */}
-      <div className="bg-zinc-950 text-zinc-300 text-[11px] py-2 px-4 border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 font-mono">
-          <div className="flex items-center gap-2 truncate">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="text-white font-semibold">Rilis 2.5:</span>
-            <span className="truncate text-zinc-400">
-              Offline-First Engine, KDS Otomatis 0-Lag & Standar SAK EMKM Laba Rugi Resmi.
+      <div className="bg-[#171513] border-b border-stone-800/80 px-4 py-2 text-[11px] text-stone-400 font-mono">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-emerald-400">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="font-semibold text-stone-200">SISTEM AKTIF:</span>
+              <span>Latency 18ms · Offline Storage Ready</span>
+            </div>
+            <span className="hidden md:inline text-stone-700">|</span>
+            <span className="hidden md:inline text-stone-400">
+              Sinkronisasi Kasir ke KDS Dapur & BOM Stok Terintegrasi
             </span>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 shrink-0 text-zinc-400">
-            <span>Uji Coba 14 Hari Tanpa Kartu Kredit</span>
-            <span>·</span>
+          <div className="flex items-center gap-4 text-xs font-sans">
             <a
               href={LIVE_DEMO_URL}
               target="_blank"
               rel="noreferrer"
-              className="text-white hover:underline flex items-center gap-1"
+              className="text-amber-400 hover:text-amber-300 font-medium flex items-center gap-1 transition-colors"
             >
-              <span>Live Demo Kasir</span>
-              <ExternalLink size={10} />
+              <span>Uji Coba Toko Kasir Langsung</span>
+              <ExternalLink size={11} />
+            </a>
+            <span className="text-stone-700">·</span>
+            <a
+              href={OPS_CONSOLE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="text-stone-400 hover:text-stone-200 flex items-center gap-1 transition-colors"
+            >
+              <span>Fleet Ops Hub</span>
+              <ExternalLink size={11} />
             </a>
           </div>
         </div>
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. STICKY GLOBAL NAVIGATION                                   */}
+      {/* 2. MAIN HEADER NAVIGATION                                     */}
       {/* ------------------------------------------------------------- */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-zinc-200/80 px-4 sm:px-6 py-3.5">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          {/* BRAND LOGO */}
-          <a href="#" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 rounded-md bg-zinc-950 text-white flex items-center justify-center font-mono font-bold text-xs shadow-sm transition-transform group-hover:scale-95">
-              HG
+      <header className="sticky top-0 z-50 bg-[#0e0d0c]/90 backdrop-blur-md border-b border-stone-800/90 px-4 sm:px-8 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* BRAND */}
+          <a href="#" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-lg bg-stone-900 border border-stone-700 flex items-center justify-center font-mono font-bold text-sm text-amber-400 shadow-inner group-hover:border-amber-500/50 transition-colors">
+              N
             </div>
-            <div className="leading-tight">
-              <span className="font-bold text-sm tracking-tight text-zinc-950 block">
-                Nusantara F&B OS
-              </span>
-              <span className="text-[10px] font-mono text-zinc-500 block">
-                By Hallo Group HQ
+            <div>
+              <div className="font-bold text-stone-100 text-sm tracking-tight flex items-center gap-1.5">
+                <span>Nusantara F&B OS</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-950/60 border border-amber-800/80 text-amber-300">
+                  v2.5
+                </span>
+              </div>
+              <span className="text-[11px] text-stone-400 font-mono block">
+                Hallo Group Enterprise
               </span>
             </div>
           </a>
 
-          {/* DESKTOP NAV LINKS */}
-          <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-zinc-600">
-            <a href="#fitur" className="hover:text-zinc-950 transition-colors">
-              Pilar Fitur
+          {/* NAV LINKS */}
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-medium text-stone-300">
+            <a href="#simulator" className="hover:text-amber-400 transition-colors">
+              Mesin Kasir & Struk
             </a>
-            <a href="#demo" className="hover:text-zinc-950 transition-colors">
-              Live Showcase
+            <a href="#masalah" className="hover:text-amber-400 transition-colors">
+              3 Ancaman Resto
             </a>
-            <a href="#kalkulator" className="hover:text-zinc-950 transition-colors">
-              Kalkulator HPP
+            <a href="#resep" className="hover:text-amber-400 transition-colors">
+              Gramatur Resep BOM
             </a>
-            <a href="#harga" className="hover:text-zinc-950 transition-colors">
-              Paket Harga
+            <a href="#kalkulator" className="hover:text-amber-400 transition-colors">
+              Kalkulator Profit
             </a>
-            <a href="#faq" className="hover:text-zinc-950 transition-colors">
+            <a href="#harga" className="hover:text-amber-400 transition-colors">
+              Paket Investasi
+            </a>
+            <a href="#faq" className="hover:text-amber-400 transition-colors">
               FAQ
             </a>
           </nav>
 
           {/* ACTION BUTTONS */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <a
               href={LIVE_DEMO_URL}
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-zinc-200 text-xs font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-950 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-stone-700 hover:border-stone-500 bg-stone-900/60 text-xs font-semibold text-stone-200 hover:text-white transition-all"
             >
-              <span>Coba Demo Kasir</span>
-              <ExternalLink size={12} className="text-zinc-400" />
+              <Store size={13} className="text-amber-400" />
+              <span>Buka Demo Kasir</span>
             </a>
 
             <a
               href="#daftar"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-medium shadow-sm transition-all active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold transition-all shadow-sm active:scale-[0.98]"
             >
-              <span>Daftar Gratis</span>
+              <span>Uji Coba 14 Hari</span>
               <ArrowRight size={13} />
             </a>
           </div>
@@ -226,622 +360,591 @@ export default function SaaSLandingPage() {
       </header>
 
       {/* ------------------------------------------------------------- */}
-      {/* 3. HERO SECTION                                               */}
+      {/* 3. HERO SECTION (BOLD EDITORIAL + HARDWARE TERMINAL MOCKUP)   */}
       {/* ------------------------------------------------------------- */}
-      <section className="pt-14 pb-16 px-4 sm:px-6 relative overflow-hidden border-b border-zinc-200">
-        <div className="max-w-4xl mx-auto text-center space-y-6">
-          {/* CATEGORY PILL */}
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 border border-zinc-200 text-zinc-800 text-xs font-medium font-mono">
-            <Sparkles size={12} className="text-amber-600" />
-            <span>Satu Platform Terpadu untuk Restoran, Cafe, & Multi-Cabang</span>
-          </div>
+      <section className="relative pt-12 pb-16 px-4 sm:px-8 overflow-hidden border-b border-stone-800">
+        {/* Ambient warm gradient background (pure CSS) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[850px] h-[450px] bg-gradient-to-b from-amber-500/10 via-amber-700/5 to-transparent blur-3xl -z-10 pointer-events-none" />
 
-          {/* MAIN HEADLINE */}
-          <h1 className="text-3xl sm:text-5xl font-extrabold text-zinc-950 tracking-tight leading-[1.15]">
-            Satu Sistem Kendali untuk Kasir, Dapur, Stok Resep, dan Keuangan Resto.
-          </h1>
-
-          {/* SUBHEADLINE */}
-          <p className="text-sm sm:text-base text-zinc-600 max-w-2xl mx-auto leading-relaxed">
-            Hentikan pemborosan 4 software terpisah. Nusantara F&B OS menyatukan kasir POS kilat, Kitchen Display System (KDS), pemotongan HPP otomatis per gram bahan, dan laporan laba rugi SAK EMKM siap bank.
-          </p>
-
-          {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <a
-              href="#daftar"
-              className="w-full sm:w-auto px-5 py-3 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98]"
-            >
-              <span>Mulai Uji Coba 14 Hari Gratis</span>
-              <ArrowRight size={15} />
-            </a>
-
-            <a
-              href={LIVE_DEMO_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full sm:w-auto px-4 py-3 rounded-lg bg-white border border-zinc-300 hover:bg-zinc-50 text-zinc-800 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
-            >
-              <Store size={15} className="text-zinc-500" />
-              <span>Buka Live Demo Toko (Tanpa Daftar)</span>
-              <ExternalLink size={13} className="text-zinc-400" />
-            </a>
-          </div>
-
-          {/* REAL VALUE PILLARS (DATA STRIP) */}
-          <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto text-left font-mono">
-            <div className="p-3 rounded-lg border border-zinc-200 bg-white">
-              <span className="text-[10px] text-zinc-400 block">KECEPATAN CETAK</span>
-              <span className="font-bold text-sm text-zinc-900 block mt-0.5">0.2 Detik</span>
-              <span className="text-[10px] text-zinc-500 block font-sans">Printer thermal 58/80mm</span>
+        <div className="max-w-6xl mx-auto space-y-12">
+          {/* HERO HEADINGS (STRICT NO-PILL BADGE) */}
+          <div className="text-center max-w-4xl mx-auto space-y-5">
+            <div className="text-xs font-mono font-semibold uppercase tracking-widest text-amber-400/90">
+              SISTEM OPERASI RESTORAN, CAFE & MULTI-CABANG
             </div>
 
-            <div className="p-3 rounded-lg border border-zinc-200 bg-white">
-              <span className="text-[10px] text-zinc-400 block">OFFLINE-FIRST</span>
-              <span className="font-bold text-sm text-emerald-700 block mt-0.5">100% Kebal RTO</span>
-              <span className="text-[10px] text-zinc-500 block font-sans">Tetap jalan saat wifi mati</span>
-            </div>
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-stone-100 tracking-tight leading-[1.12]">
+              Kendalikan Meja, Dapur, Stok Bahan Baku, dan Laporan Keuangan dalam Satu Ketukan.
+            </h1>
 
-            <div className="p-3 rounded-lg border border-zinc-200 bg-white">
-              <span className="text-[10px] text-zinc-400 block">HPP RESEP AKURAT</span>
-              <span className="font-bold text-sm text-zinc-900 block mt-0.5">Per Gramatur</span>
-              <span className="text-[10px] text-zinc-500 block font-sans">Deteksi stok minus instan</span>
-            </div>
-
-            <div className="p-3 rounded-lg border border-zinc-200 bg-white">
-              <span className="text-[10px] text-zinc-400 block">STANDAR AKUNTANSI</span>
-              <span className="font-bold text-sm text-zinc-900 block mt-0.5">SAK EMKM</span>
-              <span className="text-[10px] text-zinc-500 block font-sans">Neraca & laba rugi resmi</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 4. REAL F&B PAIN POINTS SOLVED (NO MORE LOSSES)               */}
-      {/* ------------------------------------------------------------- */}
-      <section id="fitur" className="py-16 px-4 sm:px-6 bg-white border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              Kenyataan di Lantai Bisnis Resto
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Selesaikan 4 Kebocoran Terbesar yang Menggerus Profit Cafe & Restoran Anda.
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Dibangun dari pengalaman nyata pemilik F&B menghadapi meja hang, selisih bahan baku, dan kasir yang kewalahan saat jam makan siang ramai.
+            <p className="text-sm sm:text-lg text-stone-300 max-w-2xl mx-auto leading-relaxed">
+              Bukan software kasir pencatat biasa. Nusantara F&B OS menyatukan kasir POS kilat, Kitchen Display System (KDS), pemotongan HPP otomatis per gram bahan, dan laporan laba rugi SAK EMKM tanpa akuntan manual.
             </p>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* CARD 1: OFFLINE DROP */}
-            <div className="p-5 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-3">
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-                <WifiOff size={18} />
-              </div>
-              <h3 className="font-bold text-sm text-zinc-950">
-                1. Wifi Ruko Mati? Kasir Tetap Mencetak Struk Tanpa Macet.
-              </h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Software cloud biasa langsung memunculkan loading spinner saat koneksi internet drop di jam sibuk. Mesin kami menyimpan data lokal via IndexedDB: pesanan masuk, struk tercetak, dan antrean otomatis tersinkronisasi saat sinyal kembali online.
-              </p>
-              <div className="pt-2 text-[11px] font-mono text-emerald-700 flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={13} />
-                <span>Zero Downtime · Offline Transaction Queue Built-In</span>
-              </div>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="#daftar"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 transition-all active:scale-[0.98]"
+              >
+                <span>Mulai Uji Coba Gratis 14 Hari</span>
+                <ArrowRight size={16} />
+              </a>
+
+              <a
+                href={LIVE_DEMO_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto px-5 py-3.5 rounded-lg border border-stone-700 hover:border-stone-500 bg-stone-900/80 text-stone-200 hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
+              >
+                <Store size={16} className="text-amber-400" />
+                <span>Buka Aplikasi Demo (Tanpa Daftar)</span>
+                <ExternalLink size={13} className="text-stone-400" />
+              </a>
             </div>
 
-            {/* CARD 2: RAW MATERIAL THEFT / MISSING STOCK */}
-            <div className="p-5 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-3">
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-                <UtensilsCrossed size={18} />
+            <div className="pt-4 flex flex-wrap items-center justify-center gap-y-2 gap-x-6 text-xs text-stone-400 font-mono">
+              <div className="flex items-center gap-1.5">
+                <Check size={14} className="text-amber-400" />
+                <span>100% Kebal WiFi Mati (Offline-First)</span>
               </div>
-              <h3 className="font-bold text-sm text-zinc-950">
-                2. Pemotongan Gramatur Resep Presisi & Deteksi Stok Minus.
-              </h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Tiap 1 porsi Cappuccino terjual langsung memotong 18g espresso beans dan 150ml fresh milk dari master stok. Sistem langsung menandai *Alert Stok Minus* jika barista menjual item tanpa ada pencatatan barang masuk dari supplier.
-              </p>
-              <div className="pt-2 text-[11px] font-mono text-emerald-700 flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={13} />
-                <span>HPP Dinamis Real-Time · Cegah Pembengkakan Food Cost</span>
+              <div className="flex items-center gap-1.5">
+                <Check size={14} className="text-amber-400" />
+                <span>Cetak Struk 0.2 Detik</span>
               </div>
-            </div>
-
-            {/* CARD 3: KITCHEN COMMUNICATION CHAOS */}
-            <div className="p-5 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-3">
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-                <Flame size={18} />
-              </div>
-              <h3 className="font-bold text-sm text-zinc-950">
-                3. Kitchen Display System (KDS): Tiket Pesanan Anti-Terselip.
-              </h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Gantikan kertas bon dapur yang mudah basah dan hilang. Layar dapur interaktif mengelompokkan pesanan per meja, menyortir urutan masak, dan memberi peringatan warna merah jika sajian melebihi batas target waktu saji 15 menit.
-              </p>
-              <div className="pt-2 text-[11px] font-mono text-emerald-700 flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={13} />
-                <span>SLA Waktu Saji Terpantau · Rute Masak Dapur & Bar Terpisah</span>
-              </div>
-            </div>
-
-            {/* CARD 4: SAK EMKM ACCOUNTING */}
-            <div className="p-5 rounded-xl border border-zinc-200 bg-zinc-50/50 space-y-3">
-              <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center">
-                <FileSpreadsheet size={18} />
-              </div>
-              <h3 className="font-bold text-sm text-zinc-950">
-                4. Pembukuan SAK EMKM Siap Bank: Laba Bersih Aktual Setiap Hari.
-              </h3>
-              <p className="text-xs text-zinc-600 leading-relaxed">
-                Bukan cuma ringkasan omzet kasir (GMV). Dapatkan laporan Laba Rugi resmi yang memperhitungkan HPP aktual bahan baku, beban sewa, gaji staf, depresiasi alat kopi, hingga rekonsiliasi kas laci vs saldo rekening bank.
-              </p>
-              <div className="pt-2 text-[11px] font-mono text-emerald-700 flex items-center gap-1.5 font-medium">
-                <CheckCircle2 size={13} />
-                <span>Ekspor Excel & PDF 1-Klik · Standar Akuntansi Resmi</span>
+              <div className="flex items-center gap-1.5">
+                <Check size={14} className="text-amber-400" />
+                <span>0% Biaya Potongan Komisi Omzet</span>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ------------------------------------------------------------- */}
-      {/* 5. LIVE INTERACTIVE PRODUCT SHOWCASE (TABBED WORKBENCH)       */}
-      {/* ------------------------------------------------------------- */}
-      <section id="demo" className="py-16 px-4 sm:px-6 bg-[#FAFAFA] border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto space-y-8">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              Live Interactive Showcase
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Lihat dan Rasakan Sendiri Cara Kerja Sistemnya.
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Uji coba simulasi live di bawah ini atau klik buka aplikasi asli untuk mencoba langsung di tablet atau laptop kamu.
-            </p>
-          </div>
-
-          {/* TAB BUTTONS */}
-          <div className="flex items-center justify-center gap-1.5 overflow-x-auto pb-2">
-            {[
-              { id: 'pos', label: '1. Kasir Kilat & Meja', icon: Tablet },
-              { id: 'kds', label: '2. Kitchen Display (KDS)', icon: Flame },
-              { id: 'inventory', label: '3. Resep & HPP Bahan', icon: UtensilsCrossed },
-              { id: 'finance', label: '4. Laba Rugi SAK EMKM', icon: BarChart3 },
-            ].map((t) => {
-              const Icon = t.icon
-              const isSel = activeDemoTab === t.id
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setActiveDemoTab(t.id as any)}
-                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 ${
-                    isSel
-                      ? 'bg-zinc-950 text-white shadow-sm'
-                      : 'bg-white border border-zinc-200 text-zinc-700 hover:bg-zinc-100'
-                  }`}
-                >
-                  <Icon size={14} />
-                  <span>{t.label}</span>
-                </button>
-              )
-            })}
-          </div>
-
-          {/* TAB 1: POS INTERACTIVE PREVIEW */}
-          {activeDemoTab === 'pos' && (
-            <div className="bg-white border border-zinc-200 rounded-xl overflow-hidden shadow-sm grid grid-cols-1 lg:grid-cols-3">
-              {/* MENU SELECTOR */}
-              <div className="p-4 border-b lg:border-b-0 lg:border-r border-zinc-200 lg:col-span-2 space-y-3">
-                <div className="flex items-center justify-between border-b border-zinc-100 pb-2">
-                  <div className="text-xs font-bold text-zinc-900 flex items-center gap-2">
-                    <Coffee size={14} className="text-zinc-600" />
-                    <span>Pilih Menu Demo (Klik untuk Tambah ke Keranjang)</span>
+          {/* ----------------------------------------------------------- */}
+          {/* THE TACTILE RESTO ENGINE: HARDWARE POS & THERMAL RECEIPT    */}
+          {/* ----------------------------------------------------------- */}
+          <div id="simulator" className="pt-4">
+            <div className="rounded-2xl border border-stone-800 bg-[#141210] p-4 sm:p-7 shadow-2xl space-y-6">
+              {/* TOP HARDWARE CONTROLS BAR */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50" />
+                  <div>
+                    <span className="font-bold text-sm text-stone-100 block">
+                      Simulasi Meja Kasir & Kitchen Display Langsung
+                    </span>
+                    <span className="text-[11px] text-stone-400 font-mono">
+                      Klik menu di bawah untuk melihat struk tercetak & stok bahan berkurang seketika
+                    </span>
                   </div>
-                  <span className="text-[10px] font-mono text-zinc-400">CABANG UTAMA</span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    { name: 'Kopi Susu Gula Aren 250ml', price: 24000, cat: 'Coffee' },
-                    { name: 'Americano Double Shot', price: 22000, cat: 'Coffee' },
-                    { name: 'Matcha Latte Oatmilk', price: 32000, cat: 'Non-Coffee' },
-                    { name: 'Croissant Butter Almond', price: 32000, cat: 'Bakery' },
-                    { name: 'Nasi Goreng Wagyu', price: 58000, cat: 'Kitchen' },
-                    { name: 'Spaghetti Aglio Olio', price: 48000, cat: 'Kitchen' },
-                  ].map((m) => (
+                <div className="flex items-center gap-2 font-mono text-xs">
+                  <span className="text-stone-400">Pilih Meja:</span>
+                  {['Meja 02', 'Meja 04', 'Meja 08', 'Takeaway'].map((tbl) => (
                     <button
-                      key={m.name}
+                      key={tbl}
                       type="button"
-                      onClick={() => handleDemoAddToCart(m)}
-                      className="p-2.5 rounded-lg border border-zinc-200 bg-zinc-50/50 hover:bg-zinc-100/80 text-left transition-colors cursor-pointer group flex flex-col justify-between"
+                      onClick={() => setSelectedTable(tbl)}
+                      className={`px-2.5 py-1 rounded text-[11px] font-semibold transition-colors cursor-pointer ${
+                        selectedTable === tbl
+                          ? 'bg-amber-500 text-stone-950'
+                          : 'bg-stone-900 border border-stone-800 text-stone-300 hover:bg-stone-800'
+                      }`}
                     >
-                      <div>
-                        <span className="text-[9px] font-mono text-zinc-400 block uppercase">
-                          {m.cat}
-                        </span>
-                        <span className="text-xs font-semibold text-zinc-900 leading-tight block mt-0.5 group-hover:text-zinc-950">
-                          {m.name}
-                        </span>
-                      </div>
-                      <div className="mt-2 text-xs font-mono font-bold text-zinc-800">
-                        Rp {m.price.toLocaleString('id-ID')}
-                      </div>
+                      {tbl}
                     </button>
                   ))}
                 </div>
-
-                <div className="pt-2 text-[11px] text-zinc-500 font-mono flex items-center justify-between border-t border-zinc-100">
-                  <span>⚡️ Shortcut Meja Dine-in: M1 s/d M12</span>
-                  <span className="text-emerald-700 font-semibold">Ready Thermal Printer 80mm</span>
-                </div>
               </div>
 
-              {/* LIVE BILLING & CHECKOUT BOX */}
-              <div className="p-4 bg-zinc-50/70 flex flex-col justify-between space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-zinc-200 pb-2">
-                    <span className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
-                      <Receipt size={14} className="text-zinc-600" />
-                      <span>Tagihan Meja 04</span>
+              {/* THREE-COLUMN HARDWARE WORKBENCH */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* 1. POS TOUCH SCREEN TERMINAL (COL 5) */}
+                <div className="lg:col-span-5 rounded-xl border border-stone-800 bg-[#1b1916] p-4 space-y-4">
+                  <div className="flex items-center justify-between border-b border-stone-800 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Tablet size={15} className="text-amber-400" />
+                      <span className="text-xs font-bold text-stone-200 uppercase tracking-wide font-mono">
+                        Layar Sentuh Kasir POS
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-stone-400">
+                      KATALOG MENU CEPAT
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleDemoClearCart}
-                      className="text-[10px] font-mono text-zinc-400 hover:text-rose-600 cursor-pointer"
-                    >
-                      Reset
-                    </button>
                   </div>
 
-                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                    {demoCart.map((it) => (
-                      <div
-                        key={it.name}
-                        className="flex items-center justify-between text-xs font-mono bg-white p-2 rounded border border-zinc-200"
+                  {/* MENU GRID */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {DEMO_MENU.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => handleAddToCart(item)}
+                        className="p-3 rounded-lg border border-stone-800 bg-stone-900/80 hover:bg-stone-800/90 hover:border-stone-700 text-left transition-all cursor-pointer group flex flex-col justify-between"
                       >
-                        <div className="truncate pr-2">
-                          <span className="text-zinc-900 font-medium block truncate">
-                            {it.name}
+                        <div>
+                          <div className="flex items-center justify-between text-[10px] font-mono text-stone-400 uppercase">
+                            <span>{item.category}</span>
+                            <span className="text-amber-400/90">{item.prepTime}</span>
+                          </div>
+                          <div className="text-xs font-bold text-stone-100 group-hover:text-amber-400 mt-1 leading-snug">
+                            {item.name}
+                          </div>
+                        </div>
+
+                        <div className="mt-3 pt-2 border-t border-stone-800/80 flex items-center justify-between">
+                          <span className="text-xs font-mono font-bold text-stone-200">
+                            Rp {item.price.toLocaleString('id-ID')}
                           </span>
-                          <span className="text-[10px] text-zinc-400">
-                            {it.qty}x @ Rp {it.price.toLocaleString('id-ID')}
+                          <span className="w-5 h-5 rounded bg-stone-800 group-hover:bg-amber-500 group-hover:text-stone-950 flex items-center justify-center text-xs transition-colors">
+                            <Plus size={12} />
                           </span>
                         </div>
-                        <span className="font-semibold text-zinc-900 shrink-0">
-                          Rp {(it.price * it.qty).toLocaleString('id-ID')}
-                        </span>
-                      </div>
+                      </button>
                     ))}
-
-                    {demoCart.length === 0 && (
-                      <div className="p-6 text-center text-zinc-400 text-xs font-mono">
-                        Pilih menu di sisi kiri untuk simulasi kasir.
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2 pt-2 border-t border-zinc-200">
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-500">Subtotal:</span>
-                    <span className="font-bold text-zinc-900">
-                      Rp {demoCartTotal.toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-zinc-500">PB1 Resto (10%):</span>
-                    <span className="text-zinc-700">
-                      Rp {(demoCartTotal * 0.1).toLocaleString('id-ID')}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm font-mono font-bold text-zinc-950 pt-1 border-t border-zinc-200">
-                    <span>Total Pembayaran:</span>
-                    <span>Rp {(demoCartTotal * 1.1).toLocaleString('id-ID')}</span>
                   </div>
 
-                  {demoPaymentDone ? (
-                    <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-mono flex items-center justify-center gap-1.5">
-                      <CheckCircle2 size={14} className="text-emerald-600" />
-                      <span>Transaksi Lunas & Struk Tercetak!</span>
+                  {/* ACTIVE CART DRAWER */}
+                  <div className="pt-2 border-t border-stone-800 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-stone-300 font-bold">Keranjang Pesanan ({selectedTable}):</span>
+                      <span className="text-stone-400">{cart.length} Jenis Item</span>
                     </div>
-                  ) : (
+
+                    <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                      {cart.map((c) => (
+                        <div
+                          key={c.item.id}
+                          className="flex items-center justify-between p-2 rounded bg-stone-900 border border-stone-800/80 text-xs font-mono"
+                        >
+                          <div className="truncate pr-2">
+                            <span className="text-stone-200 font-medium block truncate">
+                              {c.qty}x {c.item.name}
+                            </span>
+                            <span className="text-[10px] text-stone-400 block">
+                              Catatan: {c.note}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-stone-200 font-bold">
+                              Rp {(c.item.price * c.qty).toLocaleString('id-ID')}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItem(c.item.id)}
+                              className="text-stone-500 hover:text-rose-400 p-1 cursor-pointer"
+                              title="Hapus"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {cart.length === 0 && (
+                        <div className="p-4 text-center text-stone-500 text-xs font-mono">
+                          Keranjang kosong. Klik menu di atas untuk menambah pesanan.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* PRINT ACTION BUTTON */}
                     <button
                       type="button"
-                      onClick={handleDemoPay}
-                      disabled={demoCart.length === 0}
-                      className="w-full py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      onClick={handleSimulatePrintReceipt}
+                      disabled={cart.length === 0}
+                      className="w-full py-3 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-stone-950 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-amber-500/10 active:scale-[0.98]"
                     >
-                      <span>Simulasikan Bayar (QRIS / Tunai)</span>
-                      <ArrowRight size={13} />
+                      <Printer size={15} />
+                      <span>Cetak Struk & Kirim Tiket Dapur (KDS)</span>
                     </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 2: KDS PREVIEW */}
-          {activeDemoTab === 'kds' && (
-            <div className="bg-zinc-900 text-white border border-zinc-800 rounded-xl p-4 sm:p-5 space-y-4">
-              <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Flame size={16} className="text-amber-400" />
-                  <span className="font-bold text-xs sm:text-sm">
-                    Layar Dapur & Bar KDS (Kitchen Display System)
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                  3 TIKET AKTIF DALAM PROSES
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono text-xs">
-                {/* TICKET 1 */}
-                <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] border-b border-zinc-700 pb-1.5">
-                    <span className="font-bold text-amber-400">Meja #04 · Dine-In</span>
-                    <span className="text-[10px] text-zinc-400">03:45 lalu</span>
                   </div>
-                  <div className="space-y-1 text-zinc-200 text-[11px]">
-                    <div className="flex justify-between">
-                      <span>2x Nasi Goreng Wagyu</span>
-                      <span className="text-zinc-400">Pedas</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>1x Spaghetti Aglio Olio</span>
-                      <span className="text-zinc-400">No Chili</span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="w-full py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-[10px] mt-2 transition-colors cursor-pointer"
-                  >
-                    Tandai Selesai Masak
-                  </button>
                 </div>
 
-                {/* TICKET 2 */}
-                <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] border-b border-zinc-700 pb-1.5">
-                    <span className="font-bold text-amber-400">Meja #08 · Bar</span>
-                    <span className="text-[10px] text-zinc-400">01:20 lalu</span>
-                  </div>
-                  <div className="space-y-1 text-zinc-200 text-[11px]">
-                    <div className="flex justify-between">
-                      <span>2x Kopi Susu Gula Aren</span>
-                      <span className="text-zinc-400">Less Ice</span>
+                {/* 2. REALISTIC PHYSICAL THERMAL RECEIPT (COL 4) */}
+                <div className="lg:col-span-4 flex flex-col items-center">
+                  <div className="w-full max-w-[320px]">
+                    {/* Thermal Printer Hardware Slot */}
+                    <div className="h-4 bg-stone-900 rounded-t-lg border-t border-x border-stone-700 relative flex items-center justify-center">
+                      <div className="w-36 h-1 bg-stone-950 rounded-full" />
                     </div>
-                    <div className="flex justify-between">
-                      <span>1x Matcha Latte Oatmilk</span>
-                      <span className="text-zinc-400">Normal</span>
+
+                    {/* THE PAPER RECEIPT WITH SERRATED EDGES */}
+                    <div
+                      key={lastPrintedAt}
+                      className={`receipt-paper receipt-tear-bottom p-5 text-stone-900 space-y-3 font-mono text-xs shadow-2xl transition-all ${
+                        isReceiptPrinting ? 'animate-receipt-feed' : ''
+                      }`}
+                    >
+                      {/* HEADER */}
+                      <div className="text-center border-b border-dashed border-stone-400 pb-3 space-y-0.5">
+                        <div className="font-extrabold text-sm tracking-wider uppercase">
+                          NUSANTARA COFFEE & EATERY
+                        </div>
+                        <div className="text-[10px] text-stone-600">
+                          Jl. Senopati Raya No. 42, Jakarta Selatan
+                        </div>
+                        <div className="text-[10px] text-stone-600">
+                          NPWP / PB1: 01.345.678.9-012.000
+                        </div>
+                      </div>
+
+                      {/* META */}
+                      <div className="text-[10px] space-y-0.5 border-b border-dashed border-stone-400 pb-2">
+                        <div className="flex justify-between">
+                          <span>No. Nota: #{orderNumber}</span>
+                          <span className="font-bold">{selectedTable}</span>
+                        </div>
+                        <div className="flex justify-between text-stone-600">
+                          <span>Waktu: {lastPrintedAt}</span>
+                          <span>Kasir: Rian S.</span>
+                        </div>
+                      </div>
+
+                      {/* ITEMS */}
+                      <div className="space-y-1.5 border-b border-dashed border-stone-400 pb-3 text-[11px]">
+                        {cart.map((c) => (
+                          <div key={c.item.id}>
+                            <div className="flex justify-between font-bold">
+                              <span>{c.qty}x {c.item.name}</span>
+                              <span>Rp {(c.item.price * c.qty).toLocaleString('id-ID')}</span>
+                            </div>
+                            <div className="text-[9px] text-stone-600 pl-2">
+                              - {c.note}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* TOTALS */}
+                      <div className="space-y-1 text-[11px]">
+                        <div className="flex justify-between text-stone-700">
+                          <span>Subtotal:</span>
+                          <span>Rp {subtotal.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="flex justify-between text-stone-700">
+                          <span>PB1 Resto (10%):</span>
+                          <span>Rp {taxPb1.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="flex justify-between font-extrabold text-sm pt-1 border-t border-stone-800">
+                          <span>TOTAL:</span>
+                          <span>Rp {grandTotal.toLocaleString('id-ID')}</span>
+                        </div>
+                        <div className="flex justify-between text-[10px] text-stone-600 pt-0.5">
+                          <span>Metode Pembayaran:</span>
+                          <span className="font-bold">QRIS DINAMIS (LUNAS)</span>
+                        </div>
+                      </div>
+
+                      {/* FOOTER & BARCODE */}
+                      <div className="text-center pt-2 space-y-1 border-t border-dashed border-stone-400">
+                        <div className="text-[9px] text-stone-600">
+                          Terima kasih atas kunjungan Anda!
+                        </div>
+                        <div className="text-[8px] text-stone-500 font-mono tracking-widest">
+                          ||||| |||||| |||| | ||||||| ||||
+                        </div>
+                        <div className="text-[8px] text-stone-400 font-mono">
+                          POWERED BY NUSANTARA F&B OS
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="w-full py-1 rounded bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold text-[10px] mt-2 transition-colors cursor-pointer"
-                  >
-                    Tandai Selesai Bar
-                  </button>
                 </div>
 
-                {/* TICKET 3 (OVERDUE ALERT) */}
-                <div className="p-3 rounded-lg bg-rose-950/40 border border-rose-800 space-y-2">
-                  <div className="flex items-center justify-between text-[11px] border-b border-rose-800/60 pb-1.5">
-                    <span className="font-bold text-rose-300">Meja #02 · Takeaway</span>
-                    <span className="text-[10px] font-bold text-rose-400 animate-pulse">16:10 (LATE)</span>
-                  </div>
-                  <div className="space-y-1 text-rose-100 text-[11px]">
-                    <div className="flex justify-between">
-                      <span>1x Croissant Butter Almond</span>
-                      <span className="text-rose-300">Warm</span>
+                {/* 3. LIVE KDS & BOM STOK COUNTER (COL 3) */}
+                <div className="lg:col-span-3 space-y-4">
+                  {/* KDS MINI TICKETS */}
+                  <div className="p-4 rounded-xl border border-stone-800 bg-[#191714] space-y-3 font-mono">
+                    <div className="flex items-center justify-between border-b border-stone-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                        <Flame size={14} />
+                        <span>Layar KDS Dapur</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-semibold">LIVE DING</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>2x Americano Double Shot</span>
-                      <span className="text-rose-300">Hot</span>
+
+                    <div className="space-y-2">
+                      {kdsOrders.map((kds) => (
+                        <div
+                          key={kds.id}
+                          className={`p-2.5 rounded-lg border text-xs space-y-1 ${
+                            kds.status === 'cooking'
+                              ? 'bg-amber-950/30 border-amber-800/80 text-amber-200'
+                              : 'bg-stone-900 border-stone-800 text-stone-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between text-[10px] font-bold border-b border-stone-800 pb-1">
+                            <span>#{kds.id} · {kds.table}</span>
+                            <span className="text-amber-400 font-mono">{kds.elapsed} lalu</span>
+                          </div>
+                          <div className="text-[11px] text-stone-300 space-y-0.5 pt-0.5">
+                            {kds.items.map((it, idx) => (
+                              <div key={idx} className="truncate">• {it}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="w-full py-1 rounded bg-rose-500 hover:bg-rose-400 text-white font-bold text-[10px] mt-2 transition-colors cursor-pointer"
-                  >
-                    Selesaikan Pesanan Terlambat
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
-          {/* TAB 3: INVENTORY RECIPE BOM */}
-          {activeDemoTab === 'inventory' && (
-            <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                <div>
-                  <h3 className="font-bold text-xs sm:text-sm text-zinc-950">
-                    Kalkulasi Bill of Materials (BOM) & HPP Resep Dinamis
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 mt-0.5">
-                    Stok bahan baku terpotong otomatis per takaran gramatur saat kasir membunyikan struk.
-                  </p>
-                </div>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 border border-zinc-200 text-zinc-700">
-                  TARGET FOOD COST: &lt; 35%
-                </span>
-              </div>
+                  {/* LIVE INVENTORY GRAMS DEDUCTED */}
+                  <div className="p-4 rounded-xl border border-stone-800 bg-[#191714] space-y-3 font-mono">
+                    <div className="flex items-center justify-between border-b border-stone-800 pb-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-stone-200">
+                        <Package size={14} className="text-amber-400" />
+                        <span>Potong Stok Resep (BOM)</span>
+                      </div>
+                      <span className="text-[10px] text-stone-400">OTOMATIS</span>
+                    </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono min-w-[500px]">
-                  <thead>
-                    <tr className="bg-zinc-50 border-b border-zinc-200 text-[10px] text-zinc-500 uppercase">
-                      <th className="py-2 px-3">Bahan Baku Resep</th>
-                      <th className="py-2 px-3">Takaran / Porsi</th>
-                      <th className="py-2 px-3 text-right">Biaya Bahan</th>
-                      <th className="py-2 px-3 text-right">Sisa Stok Fisik</th>
-                      <th className="py-2 px-3 text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-100 text-[11px]">
-                    <tr>
-                      <td className="py-2.5 px-3 font-semibold text-zinc-900 font-sans">
-                        House Blend Arabica Beans
-                      </td>
-                      <td className="py-2.5 px-3">18.0 gram</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-zinc-900">Rp 4.500</td>
-                      <td className="py-2.5 px-3 text-right text-zinc-700">14.2 kg</td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-semibold">
-                          AMAN
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between items-center text-stone-300">
+                        <span>Biji Kopi Arabika:</span>
+                        <span className="font-bold text-rose-400">-{inventoryDeductions.beans} gram</span>
+                      </div>
+                      <div className="flex justify-between items-center text-stone-300">
+                        <span>Susu UHT Fresh:</span>
+                        <span className="font-bold text-rose-400">-{inventoryDeductions.milk} ml</span>
+                      </div>
+                      <div className="flex justify-between items-center text-stone-300">
+                        <span>Gula Aren Cair:</span>
+                        <span className="font-bold text-rose-400">-{inventoryDeductions.syrup} ml</span>
+                      </div>
+                      <div className="pt-2 border-t border-stone-800 flex justify-between items-center text-xs">
+                        <span className="text-stone-400">HPP Bahan Terkunci:</span>
+                        <span className="font-bold text-emerald-400">
+                          Rp {inventoryDeductions.cogs.toLocaleString('id-ID')}
                         </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3 font-semibold text-zinc-900 font-sans">
-                        Fresh Milk Pasteurisasi
-                      </td>
-                      <td className="py-2.5 px-3">150.0 ml</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-zinc-900">Rp 3.600</td>
-                      <td className="py-2.5 px-3 text-right text-zinc-700">42.0 liter</td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-semibold">
-                          AMAN
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="py-2.5 px-3 font-semibold text-zinc-900 font-sans">
-                        Sirup Gula Aren Organik
-                      </td>
-                      <td className="py-2.5 px-3">25.0 ml</td>
-                      <td className="py-2.5 px-3 text-right font-bold text-zinc-900">Rp 1.100</td>
-                      <td className="py-2.5 px-3 text-right text-rose-600 font-bold">1.2 liter</td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span className="px-1.5 py-0.2 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-semibold">
-                          RESTOCK
-                        </span>
-                      </td>
-                    </tr>
-                    <tr className="bg-zinc-50 font-bold text-zinc-950">
-                      <td colSpan={2} className="py-2 px-3 text-right">
-                        Total HPP Resep per Cup:
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono text-emerald-700">Rp 9.200</td>
-                      <td colSpan={2} className="py-2 px-3 text-[10px] text-zinc-500 font-sans">
-                        Harga Jual: Rp 24.000 · Margin Kotor: 61.6%
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: SAK EMKM FINANCE PREVIEW */}
-          {activeDemoTab === 'finance' && (
-            <div className="bg-white border border-zinc-200 rounded-xl p-4 sm:p-5 space-y-4 shadow-sm font-mono">
-              <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-                <div>
-                  <h3 className="font-bold text-xs sm:text-sm text-zinc-950 font-sans">
-                    Laporan Laba Rugi Komparatif Harian (Standar SAK EMKM)
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 font-sans mt-0.5">
-                    Rekonsiliasi otomatis kas laci kasir vs mutasi rekening bank secara real-time.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded border border-zinc-200">
-                    PERIODE BERJALAN
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                  <span className="text-[10px] text-zinc-400 block">PENDAPATAN KOTOR (GMV)</span>
-                  <span className="font-bold text-base text-zinc-900 block mt-0.5">
-                    Rp 142.800.000
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-sans block">Bulan ini</span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                  <span className="text-[10px] text-zinc-400 block">HPP BAHAN BAKU (COGS)</span>
-                  <span className="font-bold text-base text-rose-700 block mt-0.5">
-                    Rp 48.552.000
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-sans block">34.0% dari GMV</span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-zinc-50 border border-zinc-100">
-                  <span className="text-[10px] text-zinc-400 block">BIAYA OPERASIONAL (OPEX)</span>
-                  <span className="font-bold text-base text-zinc-800 block mt-0.5">
-                    Rp 36.200.000
-                  </span>
-                  <span className="text-[10px] text-zinc-500 font-sans block">Gaji, sewa & listrik</span>
-                </div>
-
-                <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-200">
-                  <span className="text-[10px] text-emerald-800 font-bold block">LABA BERSIH BERJALAN</span>
-                  <span className="font-bold text-base text-emerald-700 block mt-0.5">
-                    Rp 58.048.000
-                  </span>
-                  <span className="text-[10px] text-emerald-800 font-sans block font-medium">
-                    Net Margin: 40.6%
-                  </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
-
-          {/* DEMO CTA STRIP */}
-          <div className="p-4 rounded-xl border border-zinc-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span className="text-zinc-700 font-medium font-sans">
-                Ingin mencoba sendiri langsung di layar tablet kasir kamu?
-              </span>
-            </div>
-
-            <a
-              href={LIVE_DEMO_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-1.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-white font-medium flex items-center justify-center gap-1.5 transition-colors shrink-0 font-sans"
-            >
-              <span>Buka Aplikasi Demo Live</span>
-              <ExternalLink size={12} />
-            </a>
           </div>
         </div>
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 6. INTERACTIVE ROI & FOOD COST CALCULATOR                     */}
+      {/* 4. REAL F&B STRESS TESTS (3 ANCAMAN NYATA DI LANTAI RESTORAN)  */}
       {/* ------------------------------------------------------------- */}
-      <section id="kalkulator" className="py-16 px-4 sm:px-6 bg-white border-b border-zinc-200">
-        <div className="max-w-4xl mx-auto space-y-10">
-          <div className="text-center space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              Kalkulator Efisiensi Operasional
+      <section id="masalah" className="py-20 px-4 sm:px-8 bg-[#12100e] border-b border-stone-800">
+        <div className="max-w-6xl mx-auto space-y-14">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              KENYATAAN DI LANTAI BISNIS KULINER
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Berapa Uang yang Bisa Anda Hemat Tiap Bulan?
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-100 tracking-tight">
+              3 Penyebab Utama Cafe & Restoran Ramai Tapi Pemilik Tidak Tahu Untungnya Kemana.
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-600 max-w-xl mx-auto">
-              Geser nilai di bawah ini sesuai estimasi operasional kedai atau resto Anda saat ini.
+            <p className="text-xs sm:text-base text-stone-400 leading-relaxed">
+              Software kasir cloud biasa dibuat untuk toko ritel umum, bukan untuk kecepatan dan kekacauan jam makan siang di restoran.
             </p>
           </div>
 
-          <div className="p-6 rounded-xl border border-zinc-200 bg-zinc-50/50 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            {/* SLIDERS */}
-            <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* ANCAMAN 1: OFFLINE CRASH */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#181614] space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-lg bg-rose-950/60 border border-rose-800 text-rose-400 flex items-center justify-center">
+                  <WifiOff size={20} />
+                </div>
+                <h3 className="font-bold text-base text-stone-100 leading-snug">
+                  1. WiFi Ruko Mati di Jam Sibuk (Jam 12:45)
+                </h3>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  Software cloud murni langsung memunculkan loading spinner berputar tiada akhir saat koneksi internet drop. Antrean kasir mengular, pelanggan marah, dan pesanan terpaksa dicatat di kertas manual yang rawan hilang.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-stone-800/80 font-mono text-[11px] text-amber-300 space-y-1">
+                <div className="font-bold text-stone-200">Solusi Nusantara OS:</div>
+                <div className="text-stone-400">
+                  Arsitektur Offline-First (IndexedDB). Transaksi tetap tercetak 0.2 detik tanpa jeda dan otomatis tersinkron saat internet pulih.
+                </div>
+              </div>
+            </div>
+
+            {/* ANCAMAN 2: SUSUT BAHAN BAKU TANPA JEJAK */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#181614] space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-lg bg-amber-950/60 border border-amber-800 text-amber-400 flex items-center justify-center">
+                  <UtensilsCrossed size={20} />
+                </div>
+                <h3 className="font-bold text-base text-stone-100 leading-snug">
+                  2. Bahan Baku Bocor & Resep Tidak Konsisten
+                </h3>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  Kasir biasa hanya mencatat menu jadi, bukan bahan bakunya. Barista menuang 35ml sirup bukan 20ml, susu terbuang basi, dan daging susut tanpa ada yang tahu sampai akhir bulan saat modal kerja habis.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-stone-800/80 font-mono text-[11px] text-amber-300 space-y-1">
+                <div className="font-bold text-stone-200">Solusi Nusantara OS:</div>
+                <div className="text-stone-400">
+                  Bill of Materials (BOM) presisi per gram. Deteksi selisih fisik vs sistem dalam 1 kali Stock Opname, selamatkan jutaan rupiah per bulan.
+                </div>
+              </div>
+            </div>
+
+            {/* ANCAMAN 3: KERTAS DAPUR KUSUT & PESANAN TERSELIP */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#181614] space-y-4 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-950/60 border border-emerald-800 text-emerald-400 flex items-center justify-center">
+                  <Flame size={20} />
+                </div>
+                <h3 className="font-bold text-base text-stone-100 leading-snug">
+                  3. Kertas Bon Dapur Basah & Salah Meja
+                </h3>
+                <p className="text-xs text-stone-400 leading-relaxed">
+                  Kertas printer dapur terselip di bawah wajan, terciprat kuah, atau hilang tertiup angin. Pelanggan menunggu 40 menit untuk menu yang belum dimasak, reputasi bintang 5 Google Maps Anda langsung hancur.
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-stone-800/80 font-mono text-[11px] text-amber-300 space-y-1">
+                <div className="font-bold text-stone-200">Solusi Nusantara OS:</div>
+                <div className="text-stone-400">
+                  Kitchen Display System (KDS) digital interaktif dengan SLA timer warna (Hijau, Kuning, Merah) tanpa kertas kusut.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 5. DEEP DIVE: RECIPE BILL OF MATERIALS (BOM) & HPP PRESISI     */}
+      {/* ------------------------------------------------------------- */}
+      <section id="resep" className="py-20 px-4 sm:px-8 bg-[#0e0d0c] border-b border-stone-800">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              PRESISI BILL OF MATERIALS (BOM)
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-100 tracking-tight">
+              Ketahui Biaya Modal Setiap Cup dan Porsi Hingga Satuan Rupiah Terkecil.
+            </h2>
+            <p className="text-xs sm:text-base text-stone-400">
+              Contoh riil kalkulasi bahan baku pada 1 cup Iced Palm Sugar Latte di outlet Anda:
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-stone-800 bg-[#161412] p-5 sm:p-7 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-800 pb-4">
+              <div>
+                <h3 className="font-bold text-lg text-stone-100 flex items-center gap-2">
+                  <Coffee size={18} className="text-amber-400" />
+                  <span>Resep Master: Iced Palm Sugar Latte (12oz)</span>
+                </h3>
+                <span className="text-xs text-stone-400 font-mono">
+                  Kategori: Signature Coffee · Target Margin Kotor: &gt; 65%
+                </span>
+              </div>
+
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <div className="px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800">
+                  <span className="text-stone-400 block text-[10px]">HARGA JUAL MENU</span>
+                  <span className="font-bold text-stone-100 text-sm">Rp 28.000</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-stone-900 border border-stone-800">
+                  <span className="text-stone-400 block text-[10px]">TOTAL HPP BAHAN</span>
+                  <span className="font-bold text-amber-400 text-sm">Rp 9.230</span>
+                </div>
+                <div className="px-3 py-1.5 rounded-lg bg-emerald-950/60 border border-emerald-800">
+                  <span className="text-emerald-400 block text-[10px]">MARGIN KOTOR</span>
+                  <span className="font-bold text-emerald-300 text-sm">67.0%</span>
+                </div>
+              </div>
+            </div>
+
+            {/* RECIPE TABLE */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-mono min-w-[550px]">
+                <thead>
+                  <tr className="border-b border-stone-800 text-stone-400 text-[11px] uppercase">
+                    <th className="py-2.5 px-3">Komponen Bahan Baku</th>
+                    <th className="py-2.5 px-3">Takaran Standar (SOP)</th>
+                    <th className="py-2.5 px-3">Harga Beli Supplier</th>
+                    <th className="py-2.5 px-3 text-right">Biaya per Porsi</th>
+                    <th className="py-2.5 px-3 text-center">Status Pemotongan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-800/60 text-stone-300 text-xs">
+                  <tr>
+                    <td className="py-3 px-3 font-semibold text-stone-100 font-sans">
+                      Biji Kopi Arabika House Blend (Gayo + Kintamani)
+                    </td>
+                    <td className="py-3 px-3">18.0 gram</td>
+                    <td className="py-3 px-3">Rp 220.000 / kg</td>
+                    <td className="py-3 px-3 text-right font-bold text-stone-100">Rp 3.960</td>
+                    <td className="py-3 px-3 text-center text-emerald-400">Auto Deduk</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-3 font-semibold text-stone-100 font-sans">
+                      Fresh Milk Pasteurisasi (Diamond)
+                    </td>
+                    <td className="py-3 px-3">160.0 ml</td>
+                    <td className="py-3 px-3">Rp 22.000 / liter</td>
+                    <td className="py-3 px-3 text-right font-bold text-stone-100">Rp 3.520</td>
+                    <td className="py-3 px-3 text-center text-emerald-400">Auto Deduk</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-3 font-semibold text-stone-100 font-sans">
+                      Gula Aren Cair Organik Premium
+                    </td>
+                    <td className="py-3 px-3">25.0 ml</td>
+                    <td className="py-3 px-3">Rp 36.000 / liter</td>
+                    <td className="py-3 px-3 text-right font-bold text-stone-100">Rp 900</td>
+                    <td className="py-3 px-3 text-center text-emerald-400">Auto Deduk</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-3 font-semibold text-stone-100 font-sans">
+                      Packaging: Cup 12oz PET + Lid Strawless
+                    </td>
+                    <td className="py-3 px-3">1.0 set</td>
+                    <td className="py-3 px-3">Rp 850 / pcs</td>
+                    <td className="py-3 px-3 text-right font-bold text-stone-100">Rp 850</td>
+                    <td className="py-3 px-3 text-center text-emerald-400">Auto Deduk</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-4 rounded-lg bg-stone-900 border border-stone-800 text-xs text-stone-400 leading-relaxed font-mono flex items-start gap-3">
+              <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold text-stone-200">Fakta Pengendalian Food Cost:</span> Jika seorang barista tanpa sengaja menuang 35ml sirup dan 190ml susu per cup, dalam 200 cup per hari Anda kehilangan profit sebesar <span className="text-amber-300 font-bold">Rp 6.300.000 per bulan</span> tanpa ada catatan sama sekali di sistem kasir biasa. Nusantara OS menutup celah kebocoran ini secara tuntas.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 6. INTERACTIVE ROI & PROFIT PRESERVATION CALCULATOR           */}
+      {/* ------------------------------------------------------------- */}
+      <section id="kalkulator" className="py-20 px-4 sm:px-8 bg-[#12100e] border-b border-stone-800">
+        <div className="max-w-5xl mx-auto space-y-12">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              SIMULASI NILAI FINANSIAL
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-100 tracking-tight">
+              Hitung Potensi Kebocoran yang Berhasil Diselamatkan Setiap Bulan.
+            </h2>
+            <p className="text-xs sm:text-base text-stone-400 max-w-xl mx-auto">
+              Geser nilai parameter di bawah sesuai skala operasional bisnis kedai atau restoran Anda saat ini.
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-8 rounded-2xl border border-stone-800 bg-[#181614] grid grid-cols-1 md:grid-cols-2 gap-8 items-center shadow-xl">
+            {/* SLIDERS INPUT */}
+            <div className="space-y-6">
               {/* SLIDER 1: OUTLETS */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-600 font-medium font-sans">Jumlah Gerai / Cabang:</span>
-                  <span className="font-bold text-zinc-950">{outletsCount} Cabang</span>
+                  <span className="text-stone-300 font-medium">Jumlah Outlet / Cabang:</span>
+                  <span className="font-bold text-amber-400 text-sm">{outletsCount} Cabang</span>
                 </div>
                 <input
                   type="range"
@@ -849,82 +952,93 @@ export default function SaaSLandingPage() {
                   max="10"
                   value={outletsCount}
                   onChange={(e) => setOutletsCount(Number(e.target.value))}
-                  className="w-full accent-zinc-950 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
               {/* SLIDER 2: ORDERS PER DAY */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-600 font-medium font-sans">Pesanan Harian / Cabang:</span>
-                  <span className="font-bold text-zinc-950">{dailyOrdersPerOutlet} Transaksi</span>
+                  <span className="text-stone-300 font-medium">Rata-rata Transaksi per Hari / Cabang:</span>
+                  <span className="font-bold text-amber-400 text-sm">{dailyOrdersPerOutlet} Nota</span>
                 </div>
                 <input
                   type="range"
-                  min="30"
+                  min="50"
                   max="600"
                   step="10"
                   value={dailyOrdersPerOutlet}
                   onChange={(e) => setDailyOrdersPerOutlet(Number(e.target.value))}
-                  className="w-full accent-zinc-950 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
               </div>
 
               {/* SLIDER 3: AVG SPENT */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-mono">
-                  <span className="text-zinc-600 font-medium font-sans">Rata-rata Nilai Struk:</span>
-                  <span className="font-bold text-zinc-950">
+                  <span className="text-stone-300 font-medium">Rata-rata Nilai per Nota (Average Ticket):</span>
+                  <span className="font-bold text-amber-400 text-sm">
                     Rp {avgTicketPrice.toLocaleString('id-ID')}
                   </span>
                 </div>
                 <input
                   type="range"
-                  min="15000"
+                  min="20000"
                   max="150000"
                   step="5000"
                   value={avgTicketPrice}
                   onChange={(e) => setAvgTicketPrice(Number(e.target.value))}
-                  className="w-full accent-zinc-950 cursor-pointer"
+                  className="w-full accent-amber-500 cursor-pointer"
                 />
+              </div>
+
+              <div className="pt-2 text-[11px] text-stone-500 font-mono">
+                *Estimasi konservatif berdasarkan data rata-rata audit F&B: 4.8% penghematan food cost & 20 jam kerja rekap staff per cabang.
               </div>
             </div>
 
-            {/* VALUE RESULTS CARD */}
-            <div className="p-5 rounded-lg border border-zinc-200 bg-white space-y-4 font-mono">
-              <div className="border-b border-zinc-100 pb-2">
-                <span className="text-[10px] text-zinc-400 block">ESTIMASI TOTAL NILAI PENGHEMATAN</span>
-                <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">
+            {/* RESULTS CARD */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#13110f] space-y-5 font-mono shadow-inner">
+              <div className="border-b border-stone-800 pb-3">
+                <span className="text-[11px] text-stone-400 uppercase tracking-wide block">
+                  POTENSI UANG YANG DISELAMATKAN
+                </span>
+                <div className="text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-1">
                   Rp {Math.round(roiCalculations.totalMonthlyValue).toLocaleString('id-ID')}
-                  <span className="text-xs font-normal text-zinc-500 font-sans"> / bulan</span>
+                  <span className="text-xs font-normal text-stone-400 font-sans"> / bulan</span>
                 </div>
-                <span className="text-[11px] text-zinc-500 font-sans mt-0.5 block">
-                  Setara Rp {Math.round(roiCalculations.annualSavings).toLocaleString('id-ID')} penghematan per tahun
+                <span className="text-xs text-stone-400 mt-1 block">
+                  Setara Rp {Math.round(roiCalculations.annualSavings).toLocaleString('id-ID')} per tahun
                 </span>
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-sans">Cegah Kebocoran Food Cost (4.5%):</span>
-                  <span className="font-semibold text-zinc-900">
+              <div className="space-y-3 text-xs">
+                <div className="flex justify-between text-stone-300">
+                  <span>Pencegahan Susut Bahan Baku:</span>
+                  <span className="font-bold text-stone-100">
                     Rp {Math.round(roiCalculations.monthlyFoodCostSavings).toLocaleString('id-ID')}
                   </span>
                 </div>
 
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-sans">Hemat Waktu Rekap Admin & Kasir:</span>
-                  <span className="font-semibold text-zinc-900">
+                <div className="flex justify-between text-stone-300">
+                  <span>Efisiensi Jam Kerja Rekon Staf:</span>
+                  <span className="font-bold text-stone-100">
                     Rp {Math.round(roiCalculations.monthlyAdminTimeSaved).toLocaleString('id-ID')}
                   </span>
+                </div>
+
+                <div className="flex justify-between text-stone-400 pt-1 border-t border-stone-800/80 text-[11px]">
+                  <span>Estimasi Omzet Kotor Bulanan:</span>
+                  <span>Rp {Math.round(roiCalculations.monthlyGrossRevenue).toLocaleString('id-ID')}</span>
                 </div>
               </div>
 
               <a
                 href="#daftar"
-                className="w-full py-2.5 rounded-md bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors font-sans"
+                className="w-full py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-amber-500/10 active:scale-[0.98] font-sans"
               >
-                <span>Daftar & Kunci Efisiensi Ini</span>
-                <ArrowRight size={13} />
+                <span>Kunci Penghematan Ini Sekarang</span>
+                <ArrowRight size={14} />
               </a>
             </div>
           </div>
@@ -932,30 +1046,30 @@ export default function SaaSLandingPage() {
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 7. TRANSPARENT PRICING TIERS                                  */}
+      {/* 7. TRANSPARENT PRICING PLANS (STRICT NO-PILL BADGE)           */}
       {/* ------------------------------------------------------------- */}
-      <section id="harga" className="py-16 px-4 sm:px-6 bg-[#FAFAFA] border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto space-y-10">
-          <div className="text-center space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              Biaya Langganan Transparan
+      <section id="harga" className="py-20 px-4 sm:px-8 bg-[#0e0d0c] border-b border-stone-800">
+        <div className="max-w-6xl mx-auto space-y-12">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              PAKET INVESTASI SAAS TRANSPARAN
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Investasi Jelas. 0% Potongan Komisi Transaksi Kasir.
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-100 tracking-tight">
+              Biaya Tetap Bulanan. 0% Potongan Komisi Transaksi Kasir.
             </h2>
-            <p className="text-xs sm:text-sm text-zinc-600 max-w-xl mx-auto">
-              Kami tidak mengambil potongan sepeser pun dari omzet restoran Anda. Murni biaya langganan SaaS tetap per bulan.
+            <p className="text-xs sm:text-base text-stone-400 max-w-xl mx-auto">
+              Tidak ada bagi hasil persentase omzet. Anda pegang 100% laba resto Anda sendiri.
             </p>
 
-            {/* BILLING TOGGLE */}
-            <div className="inline-flex items-center p-1 rounded-lg bg-zinc-200/80 border border-zinc-300 mt-4 text-xs font-mono">
+            {/* BILLING CYCLE SELECTOR */}
+            <div className="inline-flex items-center p-1 rounded-lg bg-stone-900 border border-stone-800 mt-3 text-xs font-mono">
               <button
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                className={`px-3.5 py-1.5 rounded-md transition-colors cursor-pointer ${
                   billingCycle === 'monthly'
-                    ? 'bg-white text-zinc-950 font-bold shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-950'
+                    ? 'bg-amber-500 text-stone-950 font-bold'
+                    : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
                 Bulanan
@@ -963,65 +1077,65 @@ export default function SaaSLandingPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle('annually')}
-                className={`px-3 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
                   billingCycle === 'annually'
-                    ? 'bg-white text-zinc-950 font-bold shadow-xs'
-                    : 'text-zinc-600 hover:text-zinc-950'
+                    ? 'bg-amber-500 text-stone-950 font-bold'
+                    : 'text-stone-400 hover:text-stone-200'
                 }`}
               >
                 <span>Tahunan</span>
-                <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded">
+                <span className="text-[10px] bg-stone-950 text-amber-300 font-bold px-1.5 py-0.2 rounded">
                   Hemat 2 Bulan
                 </span>
               </button>
             </div>
           </div>
 
-          {/* 3 TIERS CARDS */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* TIER 1: STARTER */}
-            <div className="p-6 rounded-xl border border-zinc-200 bg-white space-y-5 flex flex-col justify-between">
+          {/* 3 TIERS (CLEAN, NO AI CAPSULES) */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+            {/* TIER 1: KEDAI STARTER */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#161412] space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-mono text-zinc-400 uppercase font-semibold">
-                    UNTUK KEDAI TUNGGAL
+                  <span className="text-xs font-mono text-stone-400 uppercase font-semibold">
+                    UNTUK COFFEE SHOP 1 OUTLET
                   </span>
-                  <h3 className="text-lg font-bold text-zinc-950 mt-0.5">Starter</h3>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Cocok untuk coffee shop atau booth kuliner 1 cabang yang butuh kasir cepat dan cetak struk thermal.
+                  <h3 className="text-xl font-bold text-stone-100 mt-1">Kedai Starter</h3>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Solusi kasir kilat dan cetak thermal untuk kedai kopi tunggal atau cloud kitchen.
                   </p>
                 </div>
 
-                <div className="font-mono">
-                  <div className="text-2xl font-extrabold text-zinc-950">
+                <div className="font-mono pt-2">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-stone-100">
                     {billingCycle === 'annually' ? 'Rp 249.000' : 'Rp 299.000'}
-                    <span className="text-xs font-normal text-zinc-500 font-sans"> / bulan</span>
+                    <span className="text-xs font-normal text-stone-400 font-sans"> / bulan</span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-sans">
+                  <span className="text-[11px] text-stone-400 font-sans block mt-0.5">
                     {billingCycle === 'annually' ? 'Ditagihkan Rp 2.990.000 / tahun' : 'Bebas batalkan kapan saja'}
                   </span>
                 </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-zinc-100 text-xs text-zinc-700">
+                <div className="space-y-2.5 pt-3 border-t border-stone-800 text-xs text-stone-300">
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>1 Cabang & 2 Terminal Kasir</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>1 Cabang & Hingga 2 Terminal Kasir</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>POS Cepat + Offline-First Engine</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Mesin Kasir Offline-First (Anti WiFi Mati)</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
+                    <Check size={14} className="text-amber-400 shrink-0" />
                     <span>Cetak Struk Thermal Bluetooth/USB</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
+                    <Check size={14} className="text-amber-400 shrink-0" />
                     <span>Manajemen Stok Bahan Dasar</span>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <span className="w-3.5 h-0.5 bg-zinc-300 shrink-0" />
-                    <span>Tanpa KDS Dapur & SAK EMKM</span>
+                  <div className="flex items-center gap-2 text-stone-600">
+                    <span className="w-3.5 h-0.5 bg-stone-700 shrink-0" />
+                    <span>Belum termasuk KDS Layar Dapur</span>
                   </div>
                 </div>
               </div>
@@ -1029,63 +1143,59 @@ export default function SaaSLandingPage() {
               <a
                 href="#daftar"
                 onClick={() => setRegForm((p) => ({ ...p, tier: 'starter' }))}
-                className="w-full py-2.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-zinc-900 text-xs font-semibold text-center transition-colors block"
+                className="w-full py-2.5 rounded-lg border border-stone-700 hover:border-stone-500 bg-stone-900 text-stone-200 hover:text-white text-xs font-semibold text-center transition-colors block"
               >
                 Pilih Starter
               </a>
             </div>
 
-            {/* TIER 2: PRO (RECOMMENDED) */}
-            <div className="p-6 rounded-xl border-2 border-zinc-950 bg-white space-y-5 flex flex-col justify-between relative shadow-md">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-zinc-950 text-white text-[10px] font-mono font-bold tracking-wider uppercase">
-                PALING POPULER · RESTO PILIHAN
-              </div>
-
+            {/* TIER 2: RESTO PRO (FEATURED) */}
+            <div className="p-6 rounded-xl border-2 border-amber-500 bg-[#1a1714] space-y-6 flex flex-col justify-between shadow-2xl relative">
               <div className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase font-semibold">
-                    MULTI-CABANG & RESTO LENGKAP
+                  <span className="text-xs font-mono text-amber-400 uppercase font-semibold">
+                    SOLUSI RESTORAN & MULTI-DIVISI
                   </span>
-                  <h3 className="text-lg font-bold text-zinc-950 mt-0.5">Professional (Pro)</h3>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Solusi lengkap cafe & resto berkembang: KDS dapur, HPP resep otomatis, hingga laporan SAK EMKM.
+                  <h3 className="text-xl font-bold text-stone-100 mt-1">Resto Professional</h3>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Untuk restoran dine-in dengan meja, dapur masak, dan resep bahan baku gramatur.
                   </p>
                 </div>
 
-                <div className="font-mono">
-                  <div className="text-2xl font-extrabold text-zinc-950">
-                    {billingCycle === 'annually' ? 'Rp 665.000' : 'Rp 799.000'}
-                    <span className="text-xs font-normal text-zinc-500 font-sans"> / bulan</span>
+                <div className="font-mono pt-2">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-amber-400">
+                    {billingCycle === 'annually' ? 'Rp 599.000' : 'Rp 699.000'}
+                    <span className="text-xs font-normal text-stone-400 font-sans"> / bulan</span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-sans">
-                    {billingCycle === 'annually' ? 'Ditagihkan Rp 7.990.000 / tahun' : 'Bebas batalkan kapan saja'}
+                  <span className="text-[11px] text-stone-400 font-sans block mt-0.5">
+                    {billingCycle === 'annually' ? 'Ditagihkan Rp 7.188.000 / tahun' : 'Bebas batalkan kapan saja'}
                   </span>
                 </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-zinc-100 text-xs text-zinc-700">
-                  <div className="flex items-center gap-2 font-semibold text-zinc-950">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Hingga 3 Cabang & Unlimited Kasir</span>
+                <div className="space-y-2.5 pt-3 border-t border-stone-800 text-xs text-stone-200">
+                  <div className="flex items-center gap-2 font-bold text-stone-100">
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Hingga 3 Cabang & Kasir Tanpa Batas</span>
                   </div>
-                  <div className="flex items-center gap-2 font-semibold text-zinc-950">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
+                  <div className="flex items-center gap-2 font-bold text-stone-100">
+                    <Check size={14} className="text-amber-400 shrink-0" />
                     <span>Kitchen Display System (KDS) Interaktif</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>HPP Resep Gramatur & Alert Stok Minus</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Resep Bill of Materials (BOM) Gramatur</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Laporan Laba Rugi SAK EMKM Resmi</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Laporan Laba Rugi Resmi SAK EMKM</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
+                    <Check size={14} className="text-amber-400 shrink-0" />
                     <span>Transfer Stok Antar Gudang Cabang</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Dukungan Ekspor Excel & PDF Neraca</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Ekspor Excel & PDF 1-Klik Siap Bank</span>
                   </div>
                 </div>
               </div>
@@ -1093,55 +1203,55 @@ export default function SaaSLandingPage() {
               <a
                 href="#daftar"
                 onClick={() => setRegForm((p) => ({ ...p, tier: 'pro' }))}
-                className="w-full py-2.5 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs font-semibold text-center transition-all shadow-sm active:scale-[0.98] block"
+                className="w-full py-3 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs text-center transition-all shadow-md active:scale-[0.98] block"
               >
                 Mulai Uji Coba Pro 14 Hari
               </a>
             </div>
 
-            {/* TIER 3: ENTERPRISE */}
-            <div className="p-6 rounded-xl border border-zinc-200 bg-white space-y-5 flex flex-col justify-between">
+            {/* TIER 3: MULTI-CABANG ENTERPRISE */}
+            <div className="p-6 rounded-xl border border-stone-800 bg-[#161412] space-y-6 flex flex-col justify-between">
               <div className="space-y-4">
                 <div>
-                  <span className="text-[10px] font-mono text-zinc-400 uppercase font-semibold">
-                    FRANCHISE & ROASTERY
+                  <span className="text-xs font-mono text-stone-400 uppercase font-semibold">
+                    FRANCHISE & CHAIN HQ
                   </span>
-                  <h3 className="text-lg font-bold text-zinc-950 mt-0.5">Enterprise</h3>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Untuk jaringan franchise F&B, roastery kopi skala pabrik, dan katering dengan faktur piutang B2B.
+                  <h3 className="text-xl font-bold text-stone-100 mt-1">Enterprise HQ</h3>
+                  <p className="text-xs text-stone-400 mt-1">
+                    Untuk jaringan gerai F&B dengan dapur sentral (central kitchen) dan manajemen fleet.
                   </p>
                 </div>
 
-                <div className="font-mono">
-                  <div className="text-2xl font-extrabold text-zinc-950">
-                    {billingCycle === 'annually' ? 'Rp 1.665.000' : 'Rp 1.999.000'}
-                    <span className="text-xs font-normal text-zinc-500 font-sans"> / bulan</span>
+                <div className="font-mono pt-2">
+                  <div className="text-2xl sm:text-3xl font-extrabold text-stone-100">
+                    {billingCycle === 'annually' ? 'Rp 1.190.000' : 'Rp 1.390.000'}
+                    <span className="text-xs font-normal text-stone-400 font-sans"> / bulan</span>
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-sans">
-                    {billingCycle === 'annually' ? 'Ditagihkan Rp 19.990.000 / tahun' : 'Bebas batalkan kapan saja'}
+                  <span className="text-[11px] text-stone-400 font-sans block mt-0.5">
+                    Mencakup 10 cabang (tambah cabang +Rp 99k/cabang)
                   </span>
                 </div>
 
-                <div className="space-y-2.5 pt-2 border-t border-zinc-100 text-xs text-zinc-700">
+                <div className="space-y-2.5 pt-3 border-t border-stone-800 text-xs text-stone-300">
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Unlimited Cabang & Terminal</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Seluruh Fitur Paket Pro Tanpa Batas</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Modul Batch Roastery & Produksi Dapur</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Central Kitchen & Purchasing Order PO</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Faktur Grosir & Piutang B2B Catering</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Fleet Ops Hub Remote Access</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>Dedicated Technical Account Manager</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Integrasi API Jurnal / ERP Kustom</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check size={14} className="text-emerald-600 shrink-0" />
-                    <span>SLA Uptime 99.9% Bergaransi</span>
+                    <Check size={14} className="text-amber-400 shrink-0" />
+                    <span>Dukungan Tim Teknis Prioritas 24/7</span>
                   </div>
                 </div>
               </div>
@@ -1149,7 +1259,7 @@ export default function SaaSLandingPage() {
               <a
                 href="#daftar"
                 onClick={() => setRegForm((p) => ({ ...p, tier: 'enterprise' }))}
-                className="w-full py-2.5 rounded-lg border border-zinc-200 hover:bg-zinc-50 text-zinc-900 text-xs font-semibold text-center transition-colors block"
+                className="w-full py-2.5 rounded-lg border border-stone-700 hover:border-stone-500 bg-stone-900 text-stone-200 hover:text-white text-xs font-semibold text-center transition-colors block"
               >
                 Pilih Enterprise
               </a>
@@ -1159,259 +1269,44 @@ export default function SaaSLandingPage() {
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 8. INSTANT ONBOARDING REGISTRATION FORM                       */}
+      {/* 8. REAL OPERATIONAL FAQ (AUTHENTIC QUESTIONS)                  */}
       {/* ------------------------------------------------------------- */}
-      <section id="daftar" className="py-16 px-4 sm:px-6 bg-white border-b border-zinc-200">
-        <div className="max-w-2xl mx-auto space-y-8">
+      <section id="faq" className="py-20 px-4 sm:px-8 bg-[#12100e] border-b border-stone-800">
+        <div className="max-w-4xl mx-auto space-y-10">
           <div className="text-center space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              Mulai Dalam 3 Menit
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              JAWABAN OPERASIONAL
             </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Daftarkan Restoran Anda untuk Uji Coba Gratis 14 Hari.
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-600">
-              Tanpa kartu kredit. Akun Anda langsung aktif dan siap digunakan untuk input menu pertama.
-            </p>
-          </div>
-
-          <div className="p-6 sm:p-8 rounded-xl border border-zinc-200 bg-zinc-50/50 shadow-sm">
-            {submittedSuccess ? (
-              <div className="text-center space-y-4 py-6">
-                <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
-                  <CheckCircle2 size={28} />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="font-bold text-base text-zinc-950">
-                    Pendaftaran Resto Berhasil Diterima!
-                  </h3>
-                  <p className="text-xs text-zinc-600 max-w-md mx-auto">
-                    Tim Hallo Group Ops telah menerbitkan akun untuk <b>{regForm.businessName}</b>. Kredensial aktivasi dan petunjuk instalasi printer telah dikirimkan ke WhatsApp Anda di <b>{regForm.phone}</b>.
-                  </p>
-                </div>
-                <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
-                  <a
-                    href={LIVE_DEMO_URL}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-4 py-2 rounded-lg bg-zinc-950 text-white text-xs font-semibold flex items-center gap-1.5"
-                  >
-                    <span>Masuk ke Web Kasir Toko</span>
-                    <ExternalLink size={12} />
-                  </a>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSubmittedSuccess(false)
-                      setRegForm({
-                        businessName: '',
-                        ownerName: '',
-                        phone: '',
-                        email: '',
-                        tier: 'pro',
-                        city: '',
-                      })
-                    }}
-                    className="px-3 py-2 text-xs text-zinc-500 hover:text-zinc-900 cursor-pointer"
-                  >
-                    Daftarkan Resto Lain
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
-                      <Store size={12} className="text-zinc-500" />
-                      <span>Nama Resto / Kedai Kopi *</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Kopi Titik Temu"
-                      value={regForm.businessName}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, businessName: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 font-sans"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
-                      <User size={12} className="text-zinc-500" />
-                      <span>Nama Pemilik / PIC *</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Contoh: Budi Santoso"
-                      value={regForm.ownerName}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, ownerName: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 font-sans"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
-                      <Phone size={12} className="text-zinc-500" />
-                      <span>Nomor WhatsApp Aktif *</span>
-                    </label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="0812-XXXX-XXXX"
-                      value={regForm.phone}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, phone: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700 flex items-center gap-1">
-                      <Mail size={12} className="text-zinc-500" />
-                      <span>Email Bisnis</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="owner@titiktemu.id"
-                      value={regForm.email}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, email: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 font-sans"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700">
-                      Pilihan Paket Lisensi:
-                    </label>
-                    <select
-                      value={regForm.tier}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, tier: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 focus:outline-none focus:border-zinc-500 cursor-pointer font-sans"
-                    >
-                      <option value="starter">Starter (1 Cabang - Rp 299rb/bln)</option>
-                      <option value="pro">Professional (Hingga 3 Cabang - Rp 799rb/bln)</option>
-                      <option value="enterprise">Enterprise (Unlimited - Rp 1.999rb/bln)</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[11px] font-semibold text-zinc-700">
-                      Kota Operasional:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Jakarta Selatan, Bandung, Bali..."
-                      value={regForm.city}
-                      onChange={(e) =>
-                        setRegForm({ ...regForm, city: e.target.value })
-                      }
-                      className="w-full px-3 py-2 rounded-lg border border-zinc-200 bg-white text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-zinc-500 font-sans"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-3 rounded-lg bg-zinc-950 hover:bg-zinc-800 text-white text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 shadow-sm transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <RefreshCw size={14} className="animate-spin" />
-                        <span>Menerbitkan Lisensi Uji Coba...</span>
-                      </span>
-                    ) : (
-                      <>
-                        <span>Aktifkan Uji Coba 14 Hari Gratis Sekarang</span>
-                        <ArrowRight size={15} />
-                      </>
-                    )}
-                  </button>
-                  <p className="text-[10px] text-zinc-400 text-center mt-2 font-mono">
-                    Data Anda aman. Terhubung langsung dengan Hallo Group SaaS Operations Hub.
-                  </p>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 9. FREQUENTLY ASKED QUESTIONS (FAQ)                           */}
-      {/* ------------------------------------------------------------- */}
-      <section id="faq" className="py-16 px-4 sm:px-6 bg-[#FAFAFA] border-b border-zinc-200">
-        <div className="max-w-3xl mx-auto space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-500 font-semibold">
-              FAQ Resto Owner
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-zinc-950 tracking-tight">
-              Pertanyaan yang Sering Diajukan Pemilik Cafe & Resto.
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-100 tracking-tight">
+              Pertanyaan yang Sering Diajukan Pemilik Cafe & Restoran.
             </h2>
           </div>
 
           <div className="space-y-3">
-            {[
-              {
-                q: 'Apakah saya wajib membeli tablet atau mesin kasir khusus dari Nusantara F&B OS?',
-                a: 'Tidak sama sekali. Sistem ini berjalan langsung di browser modern (Chrome, Safari, Edge). Anda bisa memakai tablet Android, iPad, smartphone kasir, hingga laptop PC yang sudah Anda miliki di resto.',
-              },
-              {
-                q: 'Bagaimana jika wifi atau koneksi internet di resto saya mati total?',
-                a: 'Kasir tetap bisa bertransaksi, mencetak struk thermal, dan melayani antrean pelanggan seperti biasa. Data tersimpan aman di penyimpanan lokal (IndexedDB) dan akan otomatis disinkronkan ke server saat internet kembali online.',
-              },
-              {
-                q: 'Apakah printer struk thermal yang ada di toko saya saat ini bisa dipakai?',
-                a: 'Bisa. Sistem mendukung hampir semua printer thermal 58mm dan 80mm standar pasar, baik koneksi Bluetooth, USB, maupun kabel LAN/Ethernet.',
-              },
-              {
-                q: 'Apakah ada potongan komisi persentase dari setiap struk transaksi saya?',
-                a: 'Sama sekali tidak (0% transaction cut). Anda hanya membayar biaya langganan software bulanan flat. Seluruh omzet dari pelanggan sepenuhnya adalah milik Anda.',
-              },
-              {
-                q: 'Bagaimana cara memindahkan master menu dan resep dari sistem lama saya?',
-                a: 'Sistem menyediakan fitur import data dari Excel/CSV. Tim technical support kami juga siap mendampingi proses setup awal resep dan input menu cabang Anda.',
-              },
-            ].map((faq, idx) => {
+            {faqItems.map((item, idx) => {
               const isOpen = openFaqIndex === idx
               return (
                 <div
-                  key={faq.q}
-                  className="rounded-lg border border-zinc-200 bg-white overflow-hidden transition-colors"
+                  key={idx}
+                  className="rounded-xl border border-stone-800 bg-[#161412] overflow-hidden transition-colors"
                 >
                   <button
                     type="button"
                     onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                    className="w-full text-left p-4 flex items-center justify-between gap-3 text-xs sm:text-sm font-semibold text-zinc-900 cursor-pointer"
+                    className="w-full text-left p-4 sm:p-5 flex items-center justify-between gap-4 text-xs sm:text-sm font-semibold text-stone-100 cursor-pointer"
                   >
-                    <span>{faq.q}</span>
+                    <span>{item.q}</span>
                     <ChevronDown
                       size={16}
-                      className={`shrink-0 text-zinc-400 transition-transform ${
-                        isOpen ? 'rotate-180 text-zinc-950' : ''
+                      className={`shrink-0 text-stone-400 transition-transform ${
+                        isOpen ? 'rotate-180 text-amber-400' : ''
                       }`}
                     />
                   </button>
+
                   {isOpen && (
-                    <div className="px-4 pb-4 text-xs text-zinc-600 leading-relaxed border-t border-zinc-100 pt-3">
-                      {faq.a}
+                    <div className="px-4 sm:px-5 pb-5 text-xs sm:text-sm text-stone-400 leading-relaxed border-t border-stone-800/80 pt-3">
+                      {item.a}
                     </div>
                   )}
                 </div>
@@ -1422,74 +1317,227 @@ export default function SaaSLandingPage() {
       </section>
 
       {/* ------------------------------------------------------------- */}
-      {/* 10. CLEAN FOOTER                                              */}
+      {/* 9. ONBOARDING REGISTRATION MODAL / SECTION                     */}
       {/* ------------------------------------------------------------- */}
-      <footer className="py-12 px-4 sm:px-6 bg-white text-zinc-600 text-xs">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start justify-between gap-8 border-b border-zinc-100 pb-8">
-          <div className="space-y-3 max-w-sm">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-zinc-950 text-white flex items-center justify-center font-mono font-bold text-[10px]">
-                HG
+      <section id="daftar" className="py-20 px-4 sm:px-8 bg-[#0e0d0c] border-b border-stone-800">
+        <div className="max-w-3xl mx-auto space-y-8">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-mono font-semibold uppercase tracking-wider text-amber-400">
+              MULAI SEKARANG
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-extrabold text-stone-100 tracking-tight">
+              Buktikan Sendiri di Toko Anda Selama 14 Hari Bebas Risiko.
+            </h2>
+            <p className="text-xs sm:text-base text-stone-400">
+              Tanpa kartu kredit. Tim kami siap membantu import menu lama Anda langsung dari Excel.
+            </p>
+          </div>
+
+          <div className="p-6 sm:p-8 rounded-2xl border border-stone-800 bg-[#161412] shadow-2xl">
+            {submittedSuccess ? (
+              <div className="py-10 text-center space-y-4 font-mono">
+                <div className="w-12 h-12 rounded-full bg-emerald-950/80 border border-emerald-700 text-emerald-400 flex items-center justify-center mx-auto">
+                  <Check size={24} />
+                </div>
+                <h3 className="text-xl font-bold text-stone-100 font-sans">
+                  Pendaftaran Uji Coba Berhasil!
+                </h3>
+                <p className="text-xs text-stone-400 max-w-md mx-auto leading-relaxed">
+                  Akun toko <span className="text-stone-200 font-bold">{regForm.businessName}</span> telah disiapkan. Tim operasional kami akan segera menghubungi WhatsApp Anda ({regForm.phone}) untuk mengirimkan kredensial masuk dan panduan setup printer.
+                </p>
+                <div className="pt-3">
+                  <a
+                    href={LIVE_DEMO_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs transition-colors font-sans"
+                  >
+                    <span>Masuk ke Demo Kasir Sekarang</span>
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
               </div>
-              <span className="font-bold text-sm text-zinc-950 tracking-tight">
+            ) : (
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-stone-300 font-semibold block">
+                      Nama Brand / Resto:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Kopi Nusantara"
+                      value={regForm.businessName}
+                      onChange={(e) => setRegForm({ ...regForm, businessName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-stone-300 font-semibold block">
+                      Nama Pemilik / Manajer:
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Contoh: Budi Santoso"
+                      value={regForm.ownerName}
+                      onChange={(e) => setRegForm({ ...regForm, ownerName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-stone-300 font-semibold block">
+                      Nomor WhatsApp Aktif:
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="0812-xxxx-xxxx"
+                      value={regForm.phone}
+                      onChange={(e) => setRegForm({ ...regForm, phone: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono text-stone-300 font-semibold block">
+                      Kota Lokasi Gerai:
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: Jakarta Selatan, Surabaya, Bali"
+                      value={regForm.city}
+                      onChange={(e) => setRegForm({ ...regForm, city: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 text-xs focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-xs font-mono text-stone-300 font-semibold block">
+                    Pilihan Paket Uji Coba:
+                  </label>
+                  <select
+                    value={regForm.tier}
+                    onChange={(e) => setRegForm({ ...regForm, tier: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-stone-900 border border-stone-700 text-stone-100 text-xs focus:outline-none focus:border-amber-500 font-mono"
+                  >
+                    <option value="starter">Kedai Starter (1 Cabang - Rp 299k/bln)</option>
+                    <option value="pro">Resto Pro + KDS + Resep BOM (Paling Populer - Rp 699k/bln)</option>
+                    <option value="enterprise">Enterprise Multi-Cabang + Central Kitchen (Rp 1.390k/bln)</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-stone-950 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-500/10 active:scale-[0.98] mt-3"
+                >
+                  {isSubmitting ? (
+                    <span>Menyiapkan Akun Uji Coba...</span>
+                  ) : (
+                    <>
+                      <span>Mulai Akses 14 Hari Sekarang</span>
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------------- */}
+      {/* 10. AUTHENTIC OPERATIONAL FOOTER                              */}
+      {/* ------------------------------------------------------------- */}
+      <footer className="py-14 px-4 sm:px-8 bg-[#090807] text-stone-400 text-xs font-mono border-t border-stone-800">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start justify-between gap-10 border-b border-stone-800 pb-10">
+          <div className="space-y-3 max-w-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded bg-stone-900 border border-stone-700 text-amber-400 flex items-center justify-center font-bold text-xs">
+                N
+              </div>
+              <span className="font-bold text-sm text-stone-100 font-sans tracking-tight">
                 Nusantara F&B OS
               </span>
             </div>
-            <p className="text-zinc-500 leading-relaxed text-[11px]">
+            <p className="text-stone-400 leading-relaxed text-[11px] font-sans">
               Sistem Operasi F&B Enterprise untuk Resto & Cafe Modern di Indonesia. Terintegrasi POS, KDS Dapur, HPP Resep Dinamis, dan Standar Akuntansi SAK EMKM Resmi.
             </p>
-            <div className="text-[10px] font-mono text-zinc-400">
+            <div className="text-[10px] text-stone-500">
               Bagian dari ekosistem teknologi Hallo Group HQ.
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-[11px]">
             <div className="space-y-2">
-              <span className="font-bold text-zinc-900 text-xs font-mono block">
+              <span className="font-bold text-stone-200 block uppercase">
                 PRODUK
               </span>
-              <ul className="space-y-1.5 text-[11px] text-zinc-500">
-                <li><a href="#demo" className="hover:text-zinc-950">Kasir POS Kilat</a></li>
-                <li><a href="#demo" className="hover:text-zinc-950">Kitchen Display (KDS)</a></li>
-                <li><a href="#demo" className="hover:text-zinc-950">Resep & BOM HPP</a></li>
-                <li><a href="#demo" className="hover:text-zinc-950">Akuntansi SAK EMKM</a></li>
-                <li><a href={LIVE_DEMO_URL} target="_blank" rel="noreferrer" className="hover:text-zinc-950 flex items-center gap-1">Live Store Demo <ExternalLink size={10} /></a></li>
+              <ul className="space-y-1.5 text-stone-400 font-sans">
+                <li><a href="#simulator" className="hover:text-stone-100">Mesin Kasir & Struk</a></li>
+                <li><a href="#simulator" className="hover:text-stone-100">Kitchen Display KDS</a></li>
+                <li><a href="#resep" className="hover:text-stone-100">Resep & BOM Gramatur</a></li>
+                <li><a href="#kalkulator" className="hover:text-stone-100">Kalkulator Penghematan</a></li>
+                <li>
+                  <a
+                    href={LIVE_DEMO_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-amber-400 flex items-center gap-1 font-mono text-[10px]"
+                  >
+                    <span>Live Demo Kasir</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </li>
               </ul>
             </div>
 
             <div className="space-y-2">
-              <span className="font-bold text-zinc-900 text-xs font-mono block">
+              <span className="font-bold text-stone-200 block uppercase">
                 OPERASIONAL
               </span>
-              <ul className="space-y-1.5 text-[11px] text-zinc-500">
-                <li><a href="#harga" className="hover:text-zinc-950">Paket Langganan</a></li>
-                <li><a href="#kalkulator" className="hover:text-zinc-950">Kalkulator ROI</a></li>
-                <li><a href={OPS_CONSOLE_URL} target="_blank" rel="noreferrer" className="hover:text-zinc-950 flex items-center gap-1">Fleet Ops Hub <ExternalLink size={10} /></a></li>
-                <li><a href="#faq" className="hover:text-zinc-950">Pertanyaan Umum</a></li>
+              <ul className="space-y-1.5 text-stone-400 font-sans">
+                <li><a href="#harga" className="hover:text-stone-100">Paket Langganan</a></li>
+                <li><a href="#masalah" className="hover:text-stone-100">3 Ancaman Resto</a></li>
+                <li><a href="#faq" className="hover:text-stone-100">Tanya Jawab (FAQ)</a></li>
+                <li>
+                  <a
+                    href={OPS_CONSOLE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="hover:text-amber-400 flex items-center gap-1 font-mono text-[10px]"
+                  >
+                    <span>Fleet Ops Hub</span>
+                    <ExternalLink size={10} />
+                  </a>
+                </li>
               </ul>
             </div>
 
             <div className="space-y-2">
-              <span className="font-bold text-zinc-900 text-xs font-mono block">
-                KONTAK HQ
+              <span className="font-bold text-stone-200 block uppercase">
+                KONTAK OPERASI
               </span>
-              <ul className="space-y-1.5 text-[11px] text-zinc-500 font-mono">
+              <ul className="space-y-1.5 text-stone-400">
                 <li>WhatsApp: 0812-9900-8899</li>
                 <li>Email: ops@hallogroup.id</li>
-                <li>Jakarta Selatan, Indonesia</li>
+                <li>Senopati, Jakarta Selatan</li>
               </ul>
             </div>
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-400 font-mono">
+        <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-500">
           <div>© 2026 Hallo Group HQ. Seluruh hak cipta dilindungi.</div>
           <div className="flex items-center gap-4">
-            <span>Kebijakan Privasi</span>
+            <span>SLA Uptime 99.98%</span>
             <span>·</span>
-            <span>Ketentuan Layanan</span>
-            <span>·</span>
-            <span>Status SLA Server 99.9%</span>
+            <span>Privasi Data Resto Terenkripsi</span>
           </div>
         </div>
       </footer>
