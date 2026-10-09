@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react'
 import Sidebar, { ActiveTab } from '../components/Sidebar'
-import { Menu, Store, ChefHat, Calendar, ReceiptText, ChevronDown, Building2 } from 'lucide-react'
+import { Menu, Store, ChefHat, Calendar, ReceiptText, ChevronDown, Building2, MapPin } from 'lucide-react'
 import DashboardTab from '../components/DashboardTab'
 import PosTab from '../components/PosTab'
 import TransactionHistoryTab from '../components/TransactionHistoryTab'
@@ -1386,14 +1386,18 @@ export default function AppRoot() {
                     onClick={() => setShowHeaderOutletMenu(!showHeaderOutletMenu)}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#F8F7F4] hover:bg-stone-200 border border-[#E7E5E4] text-xs font-semibold text-neutral-800 transition-colors cursor-pointer"
                   >
-                    <span>{activeOutlet.id === 'all' ? '🏢' : '📍'}</span>
+                    {activeOutlet.id === 'all' ? (
+                      <Building2 size={13} className="text-stone-600 shrink-0" />
+                    ) : (
+                      <MapPin size={13} className="text-stone-600 shrink-0" />
+                    )}
                     <span className="truncate max-w-[130px] sm:max-w-none">{activeOutlet.name}</span>
                     <ChevronDown size={12} className="text-neutral-500" />
                   </button>
 
                   {showHeaderOutletMenu && (
                     <div className="absolute left-0 mt-1.5 w-64 bg-white rounded-xl shadow-xl border border-stone-200 p-1.5 z-50">
-                      <div className="px-2 py-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      <div className="px-2 py-1 text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wider">
                         Pusat / Holding
                       </div>
                       <button
@@ -1409,13 +1413,13 @@ export default function AppRoot() {
                         }`}
                       >
                         <span className="flex items-center gap-2">
-                          <span>🏢</span>
+                          <Building2 size={13} className="text-stone-500" />
                           <span>Kantor Pusat (Konsolidasi)</span>
                         </span>
                         {activeOutlet.id === 'all' && <span>✓</span>}
                       </button>
                       <div className="my-1 border-t border-stone-100" />
-                      <div className="px-2 py-1 text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                      <div className="px-2 py-1 text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wider">
                         Cabang Operasional
                       </div>
                       {outlets
@@ -1435,7 +1439,7 @@ export default function AppRoot() {
                             }`}
                           >
                             <span className="flex items-center gap-2 truncate">
-                              <span>📍</span>
+                              <MapPin size={13} className="text-stone-400 shrink-0" />
                               <span className="truncate">{out.name}</span>
                             </span>
                             {activeOutlet.id === out.id && <span>✓</span>}

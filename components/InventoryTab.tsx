@@ -537,18 +537,18 @@ export default function InventoryTab({
             }}
             className="bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-semibold focus:outline-none cursor-pointer"
           >
-            <option value="all">🏢 Semua Cabang & Gudang Pusat (Konsolidasi)</option>
+            <option value="all">Semua Cabang & Gudang Pusat (Konsolidasi)</option>
             {outlets.map((o) => (
               <option key={o.id} value={o.id}>
-                📍 {o.name}
+                {o.name}
               </option>
             ))}
           </select>
         </div>
         <div className="text-xs text-neutral-500 font-medium">
           {isAllOutlets ? (
-            <span className="text-blue-800 font-bold bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
-              Total Konsolidasi Seluruh Outlet ({outlets.length} Cabang Terdaftar)
+            <span className="inline-flex items-center gap-1.5 text-stone-900 font-semibold bg-stone-100 px-2.5 py-1 rounded-lg border border-stone-200">
+              Total Konsolidasi Seluruh Outlet ({outlets.length} Cabang)
             </span>
           ) : (
             <span>

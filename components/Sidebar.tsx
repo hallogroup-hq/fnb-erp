@@ -326,18 +326,18 @@ export default function Sidebar({
                   }}
                   className="bg-transparent text-xs font-semibold text-neutral-900 focus:outline-none cursor-pointer w-full truncate"
                 >
-                  <option value="all">🏢 Kantor Pusat (Semua Cabang / Konsolidasi)</option>
+                  <option value="all">Kantor Pusat (Konsolidasi)</option>
                   {outlets.map((o) => (
                     <option key={o.id} value={o.id}>
-                      📍 {o.name}
+                      {o.name}
                     </option>
                   ))}
                 </select>
               </div>
               {activeOutlet.id === 'all' && (
-                <div className="mt-1.5 flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200 text-[10px] font-semibold text-blue-800">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
-                  <span className="truncate">Mode Konsolidasi Pusat (Owner View)</span>
+                <div className="mt-1.5 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-stone-100 border border-stone-200 text-[10px] font-mono text-stone-700">
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-900"></span>
+                  <span className="truncate">Konsolidasi Multi-Cabang</span>
                 </div>
               )}
             </div>

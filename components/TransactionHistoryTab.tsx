@@ -399,10 +399,10 @@ export default function TransactionHistoryTab({
                 onChange={(e) => setSelectedOutletFilter(e.target.value)}
                 className="bg-transparent text-xs font-semibold text-neutral-800 focus:outline-none cursor-pointer"
               >
-                <option value="all">🏢 Semua Cabang (Konsolidasi)</option>
+                <option value="all">Semua Cabang (Konsolidasi)</option>
                 {outlets.map((o) => (
                   <option key={o.id} value={o.id}>
-                    📍 {o.name}
+                    {o.name}
                   </option>
                 ))}
               </select>
@@ -426,11 +426,11 @@ export default function TransactionHistoryTab({
               className="px-3 py-2 rounded-xl bg-neutral-50 border border-[#E5E7EB] text-xs font-semibold text-neutral-800 focus:outline-none cursor-pointer"
             >
               <option value="all">Semua Status ({orders.length})</option>
-              <option value="preparing">🍳 Sedang Dimasak ({preparingCount})</option>
-              <option value="ready">🔔 Siap Saji ({readyCount})</option>
-              <option value="completed">✓ Selesai & Lunas ({completedCount})</option>
-              <option value="open">⚪ Open Bill ({openCount})</option>
-              <option value="cancelled">✕ Dibatalkan / Void ({cancelledCount})</option>
+              <option value="preparing">Sedang Dimasak ({preparingCount})</option>
+              <option value="ready">Siap Saji ({readyCount})</option>
+              <option value="completed">Selesai & Lunas ({completedCount})</option>
+              <option value="open">Open Bill ({openCount})</option>
+              <option value="cancelled">Dibatalkan / Void ({cancelledCount})</option>
             </select>
 
             {/* PAYMENT FILTER */}
@@ -545,8 +545,8 @@ export default function TransactionHistoryTab({
                         </span>
                       )}
                       {order.status === 'ready' && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300 animate-pulse">
-                          <BellRing size={11} className="text-blue-800" />
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-900 text-white border border-stone-800">
+                          <BellRing size={11} className="text-white" />
                           <span>Siap Saji</span>
                         </span>
                       )}
@@ -737,20 +737,20 @@ export default function TransactionHistoryTab({
                         : selectedOrder.status === 'preparing'
                         ? 'bg-amber-100 text-amber-900'
                         : selectedOrder.status === 'ready'
-                        ? 'bg-blue-100 text-blue-900'
+                        ? 'bg-stone-900 text-white'
                         : selectedOrder.status === 'open'
                         ? 'bg-stone-100 text-stone-800'
                         : 'bg-emerald-100 text-emerald-800'
                     }`}
                   >
                     {selectedOrder.status === 'cancelled'
-                      ? 'Dibatalkan (Void)'
+                      ? 'Dibatalkan'
                       : selectedOrder.status === 'preparing'
-                      ? 'Sedang Dimasak (Kitchen)'
+                      ? 'Sedang Dimasak'
                       : selectedOrder.status === 'ready'
-                      ? 'Siap Saji (Ready to Serve)'
+                      ? 'Siap Saji'
                       : selectedOrder.status === 'open'
-                      ? 'Menunggu Bayar (Open Bill)'
+                      ? 'Menunggu Pembayaran'
                       : 'Selesai & Lunas'}
                   </span>
                 </div>

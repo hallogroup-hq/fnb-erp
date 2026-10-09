@@ -7,6 +7,8 @@ import {
   Plus,
   RefreshCw,
   Building,
+  Building2,
+  MapPin,
   Search,
   BookOpen,
   CheckCircle2,
@@ -312,13 +314,14 @@ export default function AccountingTab({
             <button
               type="button"
               onClick={() => setSelectedAccountingOutlet('all')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                 isConsolidated
                   ? 'bg-black text-white shadow-xs'
                   : 'bg-white text-neutral-700 border border-stone-200 hover:bg-stone-100'
               }`}
             >
-              🏢 Semua Cabang (Konsolidasi Grup)
+              <Building2 size={13} className="shrink-0 opacity-80" />
+              <span>Konsolidasi Seluruh Cabang</span>
             </button>
             {outlets
               .filter((o) => o.id !== 'all')
@@ -327,13 +330,14 @@ export default function AccountingTab({
                   key={out.id}
                   type="button"
                   onClick={() => setSelectedAccountingOutlet(out.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     selectedAccountingOutlet === out.id
                       ? 'bg-black text-white shadow-xs'
                       : 'bg-white text-neutral-700 border border-stone-200 hover:bg-stone-100'
                   }`}
                 >
-                  📍 {out.name}
+                  <MapPin size={13} className="shrink-0 opacity-70" />
+                  <span>{out.name}</span>
                 </button>
               ))}
           </div>

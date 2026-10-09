@@ -332,32 +332,32 @@ export default function SettingsTab({
   const roleBadges: Record<Role, { label: string; badge: string; desc: string }> = {
     owner: {
       label: 'Owner / Direktur',
-      badge: 'bg-amber-100 text-amber-900 border-amber-300',
+      badge: 'bg-stone-900 text-white border-stone-800',
       desc: 'Akses penuh ke semua outlet, pembukuan akuntansi, dan seluruh modul ERP.',
     },
     manager: {
       label: 'Outlet Manager',
-      badge: 'bg-blue-100 text-blue-900 border-blue-300',
+      badge: 'bg-stone-200 text-stone-900 border-stone-300',
       desc: 'Otorisasi diskon, pembatalan/void pesanan, pantau shift kasir, dan kelola operasional.',
     },
     cashier: {
       label: 'Kasir Utama',
-      badge: 'bg-emerald-100 text-emerald-900 border-emerald-300',
+      badge: 'bg-stone-100 text-stone-800 border-stone-200',
       desc: 'Operasional POS kasir cepat, pesanan meja, buka/tutup shift laci, dan cetak struk.',
     },
     kitchen: {
       label: 'Koki Dapur',
-      badge: 'bg-orange-100 text-orange-900 border-orange-300',
+      badge: 'bg-stone-100 text-stone-800 border-stone-200',
       desc: 'Tampilan Kitchen Display System (KDS), verifikasi resep & pesanan makanan siap saji.',
     },
     barista: {
       label: 'Barista & Bar',
-      badge: 'bg-purple-100 text-purple-900 border-purple-300',
+      badge: 'bg-stone-100 text-stone-800 border-stone-200',
       desc: 'Tampilan Bar KDS, racik minuman kopi & mocktail, serta pemantauan batch roasting.',
     },
     accountant: {
       label: 'Finance & Akuntan',
-      badge: 'bg-slate-100 text-slate-900 border-slate-300',
+      badge: 'bg-stone-100 text-stone-800 border-stone-200',
       desc: 'Buku besar, jurnal umum double-entry, neraca SAK EMKM, dan penagihan B2B.',
     },
   }

@@ -140,10 +140,10 @@ export default function KdsTab({
               onChange={(e) => setSelectedKdsOutlet(e.target.value)}
               className="bg-transparent text-xs font-semibold text-neutral-800 focus:outline-none cursor-pointer"
             >
-              <option value="all">🏢 Semua Dapur (Pusat)</option>
+              <option value="all">Semua Dapur (Pusat)</option>
               {outlets.map((o) => (
                 <option key={o.id} value={o.id}>
-                  📍 {o.name}
+                  {o.name}
                 </option>
               ))}
             </select>

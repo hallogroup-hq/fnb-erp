@@ -44,6 +44,8 @@ import {
   Wine,
   Layers,
   BellRing,
+  MapPin,
+  Building2,
 } from 'lucide-react'
 import type {
   MenuItem,
@@ -201,7 +203,7 @@ export default function PosTab({
     categoryId: 'cat-food',
     price: '',
     isKitchenItem: true,
-    emoji: '🍚',
+    emoji: '',
     description: '',
     active: true,
   })
@@ -687,7 +689,7 @@ export default function PosTab({
       categoryId: activeCategory === 'all' ? 'cat-food' : activeCategory,
       price: '',
       isKitchenItem: true,
-      emoji: '🍽️',
+      emoji: '',
       description: '',
       active: true,
     })
@@ -708,7 +710,7 @@ export default function PosTab({
       categoryId: item.categoryId,
       price: String(item.price),
       isKitchenItem: item.isKitchenItem ?? true,
-      emoji: item.emoji ?? '🍽️',
+      emoji: item.emoji ?? '',
       description: item.description ?? '',
       active: item.active,
     })
@@ -1060,13 +1062,14 @@ export default function PosTab({
                   key={out.id}
                   type="button"
                   onClick={() => onSelectOutlet?.(out)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
                     targetBranchOutletId === out.id
                       ? 'bg-black text-white shadow-xs'
                       : 'bg-white text-neutral-800 border border-stone-300 hover:bg-stone-100'
                   }`}
                 >
-                  📍 {out.name}
+                  <MapPin size={13} className="shrink-0 opacity-70" />
+                  <span>{out.name}</span>
                 </button>
               ))}
           </div>
@@ -1165,11 +1168,11 @@ export default function PosTab({
               <div
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold ${
                   activeTableOrder
-                    ? 'bg-blue-50 border-blue-200 text-blue-900'
-                    : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                    ? 'bg-stone-900 border-stone-800 text-white'
+                    : 'bg-stone-100 border-stone-300 text-stone-900'
                 }`}
               >
-                <Store size={14} className={activeTableOrder ? 'text-blue-700' : 'text-emerald-700'} />
+                <Store size={14} className={activeTableOrder ? 'text-stone-300' : 'text-stone-600'} />
                 <span>
                   Meja Terpilih: <strong>{selectedTable.name}</strong> ({selectedTable.section})
                   {activeTableOrder && ` · Aktif (${formatRupiah(activeTableOrder.total)})`}
@@ -1212,14 +1215,14 @@ export default function PosTab({
         <div
           className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold shadow-xs animate-in fade-in slide-in-from-top-1 duration-200 ${
             feedbackMsg.type === 'success'
-              ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              : 'bg-blue-50 border-blue-200 text-blue-900'
+              ? 'bg-stone-900 border-stone-800 text-white'
+              : 'bg-stone-100 border-stone-300 text-stone-900'
           }`}
         >
           <div className="flex items-center gap-2">
             <CheckCircle2
               size={16}
-              className={feedbackMsg.type === 'success' ? 'text-emerald-600' : 'text-blue-600'}
+              className={feedbackMsg.type === 'success' ? 'text-emerald-400' : 'text-stone-700'}
             />
             <span>{feedbackMsg.text}</span>
           </div>
@@ -1364,8 +1367,8 @@ export default function PosTab({
                             <span>DIMASAK</span>
                           </span>
                         ) : ord.status === 'ready' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300 animate-pulse">
-                            <BellRing size={10} className="text-blue-700" />
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-900 text-white border border-stone-800">
+                            <BellRing size={10} className="text-white" />
                             <span>SIAP SAJI</span>
                           </span>
                         ) : ord.status === 'open' ? (
@@ -1390,8 +1393,8 @@ export default function PosTab({
                                 onUpdateOrderStatus(ord.id, 'ready')
                                 setFeedbackMsg({ type: 'success', text: `Pesanan #${ord.orderNumber} ditandai Siap Saji!` })
                               }}
-                              title="Tandai Siap Saji (Ready to Serve)"
-                              className="p-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 cursor-pointer transition-colors"
+                              title="Tandai Siap Saji"
+                              className="p-1.5 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 cursor-pointer transition-colors"
                             >
                               <BellRing size={14} />
                             </button>
@@ -1488,7 +1491,7 @@ export default function PosTab({
                   <span className="font-bold text-neutral-800">{branchTables.filter((t) => t.status === 'available').length}</span> Kosong
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-200" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-stone-900 ring-2 ring-stone-300" />
                   <span className="font-bold text-neutral-800">{branchTables.filter((t) => t.status === 'occupied').length}</span> Terisi
                 </span>
                 <span className="flex items-center gap-1.5">
@@ -1668,64 +1671,58 @@ export default function PosTab({
                                     <div
                                       className={`absolute -top-2 left-1/2 -translate-x-1/2 w-7 h-5 rounded-t-lg border transition-colors ${
                                         activeOrder
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-7 h-5 rounded-b-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 1
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 1 ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-7 rounded-l-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 2
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 2 ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-7 rounded-r-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 3
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 3 ? '👤' : ''}
-                                    </div>
+                                    />
 
                                     {/* CENTRAL CIRCULAR TABLE TOP */}
                                     <div
                                       className={`w-24 h-24 rounded-full border-3 flex flex-col items-center justify-center p-2 text-center transition-all shadow-md ${
                                         isSelected
-                                          ? 'ring-4 ring-black border-black bg-stone-100'
+                                          ? 'ring-4 ring-black border-black bg-stone-100 text-black'
                                           : t.status === 'available'
                                           ? 'bg-[#EFECE6] border-stone-400 text-stone-700 hover:border-emerald-600'
                                           : t.status === 'occupied'
-                                          ? 'bg-blue-50 border-blue-500 text-blue-950 ring-2 ring-blue-300'
+                                          ? 'bg-stone-900 border-stone-950 text-white ring-2 ring-stone-400'
                                           : 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-300 animate-pulse'
                                       }`}
                                     >
                                       {/* TABLE CENTER ICON */}
-                                      <div className="text-sm leading-none">
-                                        {t.status === 'available'
-                                          ? '🍽️'
-                                          : t.status === 'occupied'
-                                          ? '🍜'
-                                          : '🧾'}
+                                      <div className="text-sm leading-none flex items-center justify-center">
+                                        {t.status === 'available' ? (
+                                          <UtensilsCrossed size={14} className="text-stone-500" />
+                                        ) : t.status === 'occupied' ? (
+                                          <Store size={14} className="text-white" />
+                                        ) : (
+                                          <Clock size={14} className="text-amber-800" />
+                                        )}
                                       </div>
-                                      <div className="font-extrabold text-xs text-black mt-1 leading-tight">
+                                      <div className={`font-extrabold text-xs mt-1 leading-tight ${t.status === 'occupied' && !isSelected ? 'text-white' : 'text-black'}`}>
                                         {t.name}
                                       </div>
-                                      <div className="text-[10px] text-stone-500 font-medium">
+                                      <div className={`text-[10px] font-medium ${t.status === 'occupied' && !isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
                                         {t.capacity} Kursi
                                       </div>
                                     </div>
@@ -1739,63 +1736,57 @@ export default function PosTab({
                                     <div
                                       className={`absolute -top-2 left-1/2 -translate-x-1/2 w-7 h-5 rounded-t-lg border transition-colors ${
                                         activeOrder
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -bottom-2 left-1/2 -translate-x-1/2 w-7 h-5 rounded-b-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 1
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 1 ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -left-2 top-1/2 -translate-y-1/2 w-5 h-7 rounded-l-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 2
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 2 ? '👤' : ''}
-                                    </div>
+                                    />
                                     <div
                                       className={`absolute -right-2 top-1/2 -translate-y-1/2 w-5 h-7 rounded-r-lg border transition-colors ${
                                         activeOrder && activeOrder.items.length > 3
-                                          ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                          : 'bg-stone-300 border-stone-400'
+                                          ? 'bg-stone-800 border-stone-950'
+                                          : 'bg-stone-200 border-stone-300'
                                       }`}
-                                    >
-                                      {activeOrder && activeOrder.items.length > 3 ? '👤' : ''}
-                                    </div>
+                                    />
 
                                     {/* CENTRAL SQUARE TABLE TOP */}
                                     <div
                                       className={`w-24 h-24 rounded-2xl border-3 flex flex-col items-center justify-center p-2 text-center transition-all shadow-md ${
                                         isSelected
-                                          ? 'ring-4 ring-black border-black bg-stone-100'
+                                          ? 'ring-4 ring-black border-black bg-stone-100 text-black'
                                           : t.status === 'available'
                                           ? 'bg-[#EFECE6] border-stone-400 text-stone-700 hover:border-emerald-600'
                                           : t.status === 'occupied'
-                                          ? 'bg-blue-50 border-blue-500 text-blue-950 ring-2 ring-blue-300'
+                                          ? 'bg-stone-900 border-stone-950 text-white ring-2 ring-stone-400'
                                           : 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-300 animate-pulse'
                                       }`}
                                     >
-                                      <div className="text-sm leading-none">
-                                        {t.status === 'available'
-                                          ? '🍽️'
-                                          : t.status === 'occupied'
-                                          ? '🥘'
-                                          : '🧾'}
+                                      <div className="text-sm leading-none flex items-center justify-center">
+                                        {t.status === 'available' ? (
+                                          <UtensilsCrossed size={14} className="text-stone-500" />
+                                        ) : t.status === 'occupied' ? (
+                                          <Store size={14} className="text-white" />
+                                        ) : (
+                                          <Clock size={14} className="text-amber-800" />
+                                        )}
                                       </div>
-                                      <div className="font-extrabold text-xs text-black mt-1 leading-tight">
+                                      <div className={`font-extrabold text-xs mt-1 leading-tight ${t.status === 'occupied' && !isSelected ? 'text-white' : 'text-black'}`}>
                                         {t.name}
                                       </div>
-                                      <div className="text-[10px] text-stone-500 font-medium">
+                                      <div className={`text-[10px] font-medium ${t.status === 'occupied' && !isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
                                         {t.capacity} Kursi
                                       </div>
                                     </div>
@@ -1812,12 +1803,10 @@ export default function PosTab({
                                           key={seat}
                                           className={`w-7 h-5 rounded-t-lg border transition-colors ${
                                             activeOrder
-                                              ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                              : 'bg-stone-300 border-stone-400'
+                                              ? 'bg-stone-800 border-stone-950'
+                                              : 'bg-stone-200 border-stone-300'
                                           }`}
-                                        >
-                                          {activeOrder ? '👤' : ''}
-                                        </div>
+                                        />
                                       ))}
                                     </div>
                                     {/* 3 CHAIRS ON BOTTOM */}
@@ -1827,12 +1816,10 @@ export default function PosTab({
                                           key={seat}
                                           className={`w-7 h-5 rounded-b-lg border transition-colors ${
                                             activeOrder
-                                              ? 'bg-blue-600 border-blue-800 text-[10px] flex items-center justify-center text-white'
-                                              : 'bg-stone-300 border-stone-400'
+                                              ? 'bg-stone-800 border-stone-950'
+                                              : 'bg-stone-200 border-stone-300'
                                           }`}
-                                        >
-                                          {activeOrder ? '👤' : ''}
-                                        </div>
+                                        />
                                       ))}
                                     </div>
 
@@ -1840,22 +1827,28 @@ export default function PosTab({
                                     <div
                                       className={`w-40 h-20 rounded-2xl border-3 flex flex-row items-center justify-around px-3 text-center transition-all shadow-md ${
                                         isSelected
-                                          ? 'ring-4 ring-black border-black bg-stone-100'
+                                          ? 'ring-4 ring-black border-black bg-stone-100 text-black'
                                           : t.status === 'available'
                                           ? 'bg-[#EFECE6] border-stone-400 text-stone-700 hover:border-emerald-600'
                                           : t.status === 'occupied'
-                                          ? 'bg-blue-50 border-blue-500 text-blue-950 ring-2 ring-blue-300'
+                                          ? 'bg-stone-900 border-stone-950 text-white ring-2 ring-stone-400'
                                           : 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-300 animate-pulse'
                                       }`}
                                     >
-                                      <div className="text-xl">
-                                        {t.status === 'available' ? '🍽️' : t.status === 'occupied' ? '🥩 🍷' : '🧾'}
+                                      <div className="flex items-center justify-center">
+                                        {t.status === 'available' ? (
+                                          <UtensilsCrossed size={16} className="text-stone-500" />
+                                        ) : t.status === 'occupied' ? (
+                                          <Store size={16} className="text-white" />
+                                        ) : (
+                                          <Clock size={16} className="text-amber-800" />
+                                        )}
                                       </div>
                                       <div>
-                                        <div className="font-extrabold text-xs text-black leading-tight">
+                                        <div className={`font-extrabold text-xs leading-tight ${t.status === 'occupied' && !isSelected ? 'text-white' : 'text-black'}`}>
                                           {t.name}
                                         </div>
-                                        <div className="text-[10px] text-stone-500 font-medium">
+                                        <div className={`text-[10px] font-medium ${t.status === 'occupied' && !isSelected ? 'text-stone-300' : 'text-stone-500'}`}>
                                           VIP · {t.capacity} Kursi
                                         </div>
                                       </div>
@@ -1874,12 +1867,12 @@ export default function PosTab({
                                           : t.status === 'available'
                                           ? 'bg-stone-800 border-stone-600 text-stone-100 hover:border-amber-500'
                                           : t.status === 'occupied'
-                                          ? 'bg-stone-900 border-blue-500 text-white ring-2 ring-blue-300'
+                                          ? 'bg-stone-900 border-stone-700 text-white ring-2 ring-stone-400'
                                           : 'bg-stone-900 border-amber-500 text-white ring-2 ring-amber-300 animate-pulse'
                                       }`}
                                     >
                                       <div className="flex items-center gap-1.5">
-                                        <span className="text-sm">🍸</span>
+                                        <Wine size={14} className="text-stone-300" />
                                         <div className="text-left">
                                           <div className="font-extrabold text-xs leading-tight">{t.name}</div>
                                           <div className="text-[9px] text-stone-300">Bar Counter</div>
@@ -1895,12 +1888,10 @@ export default function PosTab({
                                           key={stool}
                                           className={`w-5 h-5 rounded-full border transition-colors ${
                                             activeOrder
-                                              ? 'bg-amber-600 border-amber-800 text-[8px] flex items-center justify-center text-white'
+                                              ? 'bg-stone-800 border-stone-950'
                                               : 'bg-stone-400 border-stone-500'
                                           }`}
-                                        >
-                                          {activeOrder ? '👤' : ''}
-                                        </div>
+                                        />
                                       ))}
                                     </div>
                                   </div>
@@ -1914,7 +1905,7 @@ export default function PosTab({
                                         className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 ${
                                           t.status === 'billing'
                                             ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                            : 'bg-blue-100 text-blue-900 border border-blue-300'
+                                            : 'bg-stone-900 text-white border border-stone-800'
                                         }`}
                                       >
                                         <Clock size={10} />
@@ -1973,7 +1964,7 @@ export default function PosTab({
                           : t.status === 'available'
                           ? 'border-emerald-200 bg-emerald-50/30 hover:border-emerald-400'
                           : t.status === 'occupied'
-                          ? 'border-blue-200 bg-blue-50/30 hover:border-blue-400'
+                          ? 'border-stone-400 bg-stone-50/70 hover:border-stone-600'
                           : 'border-amber-200 bg-amber-50/30 hover:border-amber-400'
                       }`}
                     >
@@ -1998,7 +1989,7 @@ export default function PosTab({
                               t.status === 'available'
                                 ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                                 : t.status === 'occupied'
-                                ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                ? 'bg-stone-900 text-white border border-stone-800'
                                 : 'bg-amber-100 text-amber-800 border border-amber-200'
                             }`}
                           >
@@ -2155,14 +2146,14 @@ export default function PosTab({
               )}
 
               {orderChannel === 'takeaway' && (
-                <div className="text-xs text-neutral-600 font-semibold px-2.5 py-1 bg-[#F8F7F4] rounded-lg border border-[#E7E5E4]">
-                  🥡 Pesanan Dibungkus / Counter
+                <div className="text-xs text-neutral-700 font-semibold px-2.5 py-1 bg-[#F8F7F4] rounded-lg border border-[#E7E5E4]">
+                  Pesanan Bungkus / Takeaway
                 </div>
               )}
 
               {orderChannel === 'delivery' && (
-                <div className="text-xs text-emerald-800 font-semibold px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-200">
-                  🛵 Pengiriman Online / Kurir
+                <div className="text-xs text-stone-900 font-semibold px-2.5 py-1 bg-stone-100 rounded-lg border border-stone-200">
+                  Pengiriman Online / Delivery
                 </div>
               )}
             </div>
@@ -2358,7 +2349,7 @@ export default function PosTab({
               </div>
               <div className="flex items-center gap-2">
                 {isViewingActiveTable ? (
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 border border-blue-200">
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-stone-900 text-white border border-stone-800">
                     Meja Terisi
                   </span>
                 ) : (
@@ -2383,17 +2374,17 @@ export default function PosTab({
             {isViewingActiveTable && activeTableOrder && (
               <div className="space-y-3">
                 {/* ACTIVE ORDER INFO CARD */}
-                <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-200/80 space-y-2">
+                <div className="p-3 rounded-xl bg-stone-100 border border-stone-200 space-y-2">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-blue-950 flex items-center gap-1.5">
-                      <User size={13} className="text-blue-700" />
+                    <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                      <User size={13} className="text-stone-600" />
                       <span>{activeTableOrder.customerName || 'Tamu Resto'}</span>
                     </span>
-                    <span className="text-[11px] font-mono text-blue-800 tabular-nums">
+                    <span className="text-[11px] font-mono text-stone-600 tabular-nums font-semibold">
                       #{activeTableOrder.orderNumber}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-blue-700 pt-1 border-t border-blue-200/50">
+                  <div className="flex items-center justify-between text-[11px] text-stone-600 pt-1 border-t border-stone-200">
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
                       <span>
@@ -3184,9 +3175,10 @@ export default function PosTab({
                     <button
                       type="button"
                       onClick={() => setShowDiscountModal(true)}
-                      className="py-2.5 rounded-xl bg-stone-100 border border-stone-300 text-xs font-bold text-neutral-800"
+                      className="py-2.5 rounded-xl bg-stone-100 border border-stone-300 text-xs font-bold text-neutral-800 flex items-center justify-center gap-1.5"
                     >
-                      🏷️ Diskon / Compliment
+                      <Tag size={13} className="text-neutral-600" />
+                      <span>Diskon / Compliment</span>
                     </button>
                     <button
                       type="button"
@@ -3644,7 +3636,7 @@ export default function PosTab({
                       tableActionModal.status === 'available'
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
                         : tableActionModal.status === 'occupied'
-                        ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                        ? 'bg-stone-900 text-white border border-stone-800'
                         : 'bg-amber-100 text-amber-800 border border-amber-200'
                     }`}
                   >
@@ -3681,13 +3673,13 @@ export default function PosTab({
 
               if (activeOrder) {
                 return (
-                  <div className="p-3.5 rounded-xl bg-blue-50/50 border border-blue-200 space-y-2.5">
+                  <div className="p-3.5 rounded-xl bg-stone-100 border border-stone-200 space-y-2.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-blue-950 flex items-center gap-1.5">
-                        <User size={14} className="text-blue-700" />
+                      <span className="font-bold text-stone-900 flex items-center gap-1.5">
+                        <User size={14} className="text-stone-600" />
                         <span>{activeOrder.customerName || 'Tamu Resto'}</span>
                       </span>
-                      <span className="font-mono text-blue-800 tabular-nums font-semibold">
+                      <span className="font-mono text-stone-600 tabular-nums font-semibold">
                         #{activeOrder.orderNumber} · {elapsedMin}m lalu
                       </span>
                     </div>
@@ -3705,8 +3697,8 @@ export default function PosTab({
                       ))}
                     </div>
 
-                    <div className="pt-2 border-t border-blue-200/80 flex justify-between items-baseline">
-                      <span className="text-xs font-semibold text-blue-900">Total Tagihan Sementara:</span>
+                    <div className="pt-2 border-t border-stone-200 flex justify-between items-baseline">
+                      <span className="text-xs font-semibold text-stone-700">Total Tagihan Sementara:</span>
                       <span className="text-base font-extrabold text-black tabular-nums">
                         {formatRupiah(activeOrder.total)}
                       </span>
@@ -3735,7 +3727,7 @@ export default function PosTab({
                           setShowMoveTableModal(true)
                           setTableActionModal(null)
                         }}
-                        className="py-2 px-1 rounded-lg bg-blue-50 border border-blue-200 hover:bg-blue-100 text-[11px] font-bold text-blue-900 text-center cursor-pointer flex items-center justify-center gap-1"
+                        className="py-2 px-1 rounded-lg bg-stone-100 border border-stone-300 hover:bg-stone-200 text-[11px] font-bold text-stone-900 text-center cursor-pointer flex items-center justify-center gap-1"
                       >
                         <ArrowRight size={12} />
                         <span>Pindah Meja</span>
@@ -3770,10 +3762,10 @@ export default function PosTab({
               }
 
               return (
-                <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200 text-center space-y-2">
-                  <div className="text-2xl">🍽️</div>
-                  <div className="text-xs font-bold text-emerald-950">Meja Ini Sedang Kosong</div>
-                  <p className="text-[11px] text-emerald-800">
+                <div className="p-4 rounded-xl bg-stone-100 border border-stone-200 text-center space-y-2">
+                  <UtensilsCrossed size={28} className="mx-auto text-stone-600" />
+                  <div className="text-xs font-bold text-stone-900">Meja Ini Sedang Kosong</div>
+                  <p className="text-[11px] text-stone-600">
                     Siap untuk menerima pesanan dine-in tamu baru.
                   </p>
                   <button
@@ -4259,7 +4251,13 @@ export default function PosTab({
                         className="p-2.5 rounded-xl border border-stone-200 bg-white flex items-center justify-between text-xs hover:border-stone-400 transition-colors"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <span className="text-lg">{item.emoji || (item.isKitchenItem ? '🍚' : '☕')}</span>
+                          <div className="w-8 h-8 rounded-lg bg-stone-100 border border-stone-200 flex items-center justify-center shrink-0">
+                            {item.isKitchenItem ? (
+                              <Utensils size={15} className="text-stone-700" />
+                            ) : (
+                              <Coffee size={15} className="text-stone-700" />
+                            )}
+                          </div>
                           <div className="min-w-0">
                             <div className="font-bold text-neutral-900 truncate">{item.name}</div>
                             <div className="text-[11px] text-neutral-500 font-semibold tabular-nums">

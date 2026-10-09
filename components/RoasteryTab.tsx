@@ -220,13 +220,13 @@ export default function RoasteryTab({
                     </h3>
                   </div>
                   <span
-                    className={`text-xs font-bold px-2.5 py-0.5 rounded-md border ${
+                    className={`text-[11px] font-medium px-2.5 py-0.5 rounded-md border ${
                       trf.status === 'received'
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-blue-50 text-blue-800 border-blue-200'
+                        ? 'bg-stone-900 text-white border-stone-800'
+                        : 'bg-stone-100 text-stone-800 border-stone-300 font-mono'
                     }`}
                   >
-                    {trf.status === 'received' ? 'Diterima Lengkap ✓' : 'Dalam Perjalanan (In-Transit)'}
+                    {trf.status === 'received' ? 'Diterima' : 'Dalam Perjalanan'}
                   </span>
                 </div>
 
